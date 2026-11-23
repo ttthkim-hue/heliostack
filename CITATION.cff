@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use HelioStack in research or engineering workflows, please cite it using the metadata below."
+title: "HelioStack: Open-Source Solar PV, 3D Shading, Thermal, and LiFePO4 ESS Optimization Engine"
+version: "0.1.0"
+date-released: "2026-11-23"
+license: MIT
+repository-code: "https://github.com/ttthkim-hue/heliostack"
+authors:
+  - family-names: Kim
+    given-names: Tae-Hyung
+    orcid: "https://orcid.org/0009-0003-5047-7501"
+keywords:
+  - photovoltaics
+  - solar-energy
+  - microgrid
+  - pvgis
+  - energy-storage
+  - open-science
+  - ro-crate

@@ -1,0 +1,9 @@
+PVObject_=pvGInverter
+  Manufacturer=BrokenTest
+  Model=Invalid-Inverter-Fixture
+  PNomConv=0.0
+  PMaxOUT=100.0
+  VMppMin=900.0
+  VMPPMax=600.0
+  EfficMax=105.0
+End of PVObject pvGInverter

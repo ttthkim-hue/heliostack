@@ -1,0 +1,16 @@
+PVObject_=pvGInverter
+  Version=1.0
+  Comment=Public Textbook Reference 250kW String Inverter
+  Manufacturer=OpenRef Power
+  Model=OR-250KTL-HV
+  PNomConv=250.0
+  PMaxOUT=275.0
+  VMppMin=580.0
+  VMPPMax=1350.0
+  VAbsMax=1500.0
+  EfficMax=99.0
+  EfficEuro=98.6
+  PSeuil=0.6
+  Night_Loss=0.04
+  TPNomEff=5:96.8,10:98.1,20:98.7,30:98.9,50:99.0,75:98.8,100:98.5
+End of PVObject pvGInverter

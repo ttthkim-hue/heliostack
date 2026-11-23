@@ -1,0 +1,27 @@
+PVObject_=pvModule
+  Version=1.0
+  Comment=Public Textbook Reference 550W N-Type Bifacial Module
+  Manufacturer=OpenRef Solar
+  Model=OR-550M10-BF
+  Technol=mtSiMono
+  NCelS=72
+  NCelP=2
+  Width=1.134
+  Height=2.278
+  PNom=550.0
+  Vmp=42.10
+  Imp=13.07
+  Voc=49.85
+  Isc=13.95
+  muISC=5.2
+  muVocSpec=-124.6
+  muPmpReq=-0.30
+  Gamma=1.02
+  muGamma=0.0001
+  RSerie=0.185
+  RShunt=440.0
+  Rp_0=1650.0
+  Rp_Exp=5.5
+  BifacialityFactor=0.80
+  IAM_b0=0.05
+End of PVObject pvModule
