@@ -1,17 +1,32 @@
-# HelioStack v0.3.0
+# HelioStack `v0.3.0`
 
-**Deterministic open-source solar PV, 3D ray-cast & Copernicus DEM terrain shading, OpenFOAM 14 CFD land/Floating-PV thermal, and HiGHS `LiFePO4` ESS optimization workbench with `RO-Crate 1.1` & `SHA-256` audit provenance.**
+[![CI](https://github.com/ttthkim-hue/heliostack/actions/workflows/ci.yml/badge.svg)](https://github.com/ttthkim-hue/heliostack/actions/workflows/ci.yml)
+[![PyPI version](https://img.shields.io/pypi/v/heliostack.svg)](https://pypi.org/project/heliostack/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-0f766e.svg)](./LICENSE)
+[![Live Browser Demo](https://img.shields.io/badge/Demo-Interactive_Workbench-0f766e)](https://ttthkim-hue.github.io/heliostack/)
+[![Zero Runtime AI](https://img.shields.io/badge/Runtime_GenAI-0%25_Deterministic_CPU-d97706)](./AI_DISCLOSURE.md)
 
-- **License:** MIT (`100%` OSI-permissive open source; `0%` generative AI or closed vendor APIs at runtime)
-- **Live Data, CFD & Dual-Continent Field Validation:**
-  1. European Commission **PVGIS v5.3** (`SARAH3` & `ERA5`) hourly TMY & `PVcalc` cross-validation across 4 baseline climates
+**Replacing closed Windows-only solar silos (`PVsyst`, `PV*SOL`, `HOMER Pro`, `HelioScope`) with an auditable MIT Python workbench.**  
+Clean-room `.PAN`/`.OND` checks · Copernicus DEM alpine horizon · OpenFOAM 14 CFD cooling · Dual-continent field telemetry · 8,760-hr HiGHS `LiFePO4` dispatch · `RO-Crate 1.1` provenance.
+
+```bash
+pip install heliostack
+```
+
+> **Try Live Offline Simulator in Browser:** https://ttthkim-hue.github.io/heliostack/
+
+![HelioStack v0.3.0 Verified Benchmarks — Copernicus Alps, EU Cyprus, US DOE PVDAQ #2107 & OpenFOAM 14](./docs/assets/heliostack_hero_validation.svg)
+
+> **Key Counter-Intuitive Physics Finding (Verified Open):** Pontoon Floating PV drops daytime cell temperatures by `-3.59 °C` to `-5.77 °C` (`+14–20%` total heat rejection in OpenFOAM 14 `28°` CFD), **yet** dark water albedo (`0.08` vs land `0.20`) reduces rear-side bifacial gain—delivering net annual yield gains in hot climates (**Seville `+0.38%`**) while flipping slightly negative in cooler Northern Europe (**Amsterdam `-0.68%`**).
+
+- **Verified Data, CFD & Dual-Continent Telemetry:**
+  1. **EU PVGIS v5.3** (`SARAH3` & `ERA5`) hourly TMY & `PVcalc` cross-validation across 4 baseline climates (`POA -0.59%` to `+2.74%`)
   2. **Copernicus DEM** 36-azimuth ray-cast terrain horizon vs EU PVGIS `printhorizon` across Innsbruck, Bolzano, and Zermatt (`MAE 1.25–1.57°`)
-  3. **OpenFOAM 14 (`foamRun -solver fluid`, steady `kOmegaSST`)** `28°`-tilted PV convective sweep (`5,910` cells, 8 cases) calibrating land vs pontoon Floating-PV cooling
+  3. **OpenFOAM 14 (`foamRun -solver fluid`, steady `kOmegaSST`)** `28°`-tilted PV sweep (`5,910` cells, 8 cases) calibrating land vs pontoon Floating-PV cooling
   4. **European Union 1-Year Outdoor Testbed** (**University of Cyprus PHAETHON CoE**, `8,784` full hours, `CC-BY-4.0`): `Tmod RMSE 2.18 °C` (`open_rack R² 0.9705`) / `4.19 °C` (`OpenFOAM 14 R² 0.8906`), full-year DC `R² 0.9887`
-  5. Real **892.8 kWp** US utility meter telemetry (**US DOE / NREL PVDAQ #2107**, 2024 `3,255` daylight operating hours, `R² = 0.9101`, `MBE = +3.81%`, `nRMSE = 6.79%`)
-  6. Canonical **`pvlib ModelChain`** parity check (`-0.67%` Amsterdam, `+0.31%` Seville) + 12-step PVsyst-style loss tree
-- **AI Transparency:** [`AI_DISCLOSURE.md`](./AI_DISCLOSURE.md)
-- **NLnet Scope & Roadmap (`2027-01-03`):** [`docs/ROADMAP_TO_NLNET_20270103.md`](./docs/ROADMAP_TO_NLNET_20270103.md)
+  5. **Real 892.8 kWp US Utility Telemetry** (**US DOE / NREL PVDAQ #2107**, 2024 `3,255` daylight operating hours, `R² = 0.9101`, `MBE = +3.81%`, `nRMSE = 6.79%`)
+  6. **Canonical `pvlib ModelChain` parity** (`-0.67%` Amsterdam, `+0.31%` Seville) + 12-step PVsyst-style loss tree
+- **AI Transparency:** [`AI_DISCLOSURE.md`](./AI_DISCLOSURE.md) | **NLnet `2027-01-03` Roadmap:** [`docs/ROADMAP_TO_NLNET_20270103.md`](./docs/ROADMAP_TO_NLNET_20270103.md)
 
 ---
 
