@@ -48,11 +48,14 @@ def test_cli_simulate_determinism_and_rocrate_bundle(tmp_path: Path) -> None:
 
     repro = json.loads((out_a / "repro-manifest.json").read_text(encoding="utf-8"))
     assert repro["runtime_environment"]["external_llm_used_at_runtime"] is False
+    assert repro["license"] == "AGPL-3.0-or-later"
 
     crate = json.loads((out_a / "ro-crate-metadata.json").read_text(encoding="utf-8"))
     assert crate["@context"] == "https://w3id.org/ro/crate/1.1/context"
     graph_ids = {node["@id"] for node in crate["@graph"]}
     assert {"./", "audit_report.json", "bankable_report.html", "repro-manifest.json"}.issubset(graph_ids)
+    root_node = next(node for node in crate["@graph"] if node["@id"] == "./")
+    assert root_node["license"] == "https://www.gnu.org/licenses/agpl-3.0.html"
 
     html_txt = (out_a / "bankable_report.html").read_text(encoding="utf-8")
     assert "Monthly PV Yield Chart" in html_txt

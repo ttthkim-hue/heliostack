@@ -1,12 +1,12 @@
-# HelioStack `v0.3.0`
+# HelioStack `v0.3.1`
 
 [![CI](https://github.com/ttthkim-hue/heliostack/actions/workflows/ci.yml/badge.svg)](https://github.com/ttthkim-hue/heliostack/actions/workflows/ci.yml)
 [![PyPI version](https://img.shields.io/pypi/v/heliostack.svg)](https://pypi.org/project/heliostack/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-0f766e.svg)](./LICENSE)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-0f766e.svg)](./LICENSE)
 [![Live Browser Demo](https://img.shields.io/badge/Demo-Interactive_Workbench-0f766e)](https://ttthkim-hue.github.io/heliostack/)
 [![Zero Runtime AI](https://img.shields.io/badge/Runtime_GenAI-0%25_Deterministic_CPU-d97706)](./AI_DISCLOSURE.md)
 
-**Replacing closed Windows-only solar silos (`PVsyst`, `PV*SOL`, `HOMER Pro`, `HelioScope`) with an auditable MIT Python workbench.**  
+**Replacing black-box commercial PV silos (`PVsyst`, `PV*SOL`, `HOMER Pro`, `HelioScope`) with a reproducible `AGPL-3.0-or-later` Python + OpenFOAM workbench built for graduate researchers and open energy labs.**  
 Clean-room `.PAN`/`.OND` checks · Copernicus DEM alpine horizon · OpenFOAM 14 CFD cooling · Dual-continent field telemetry · 8,760-hr HiGHS `LiFePO4` dispatch · `RO-Crate 1.1` provenance.
 
 ```bash
@@ -15,7 +15,7 @@ pip install heliostack
 
 > **Try Live Offline Simulator in Browser:** https://ttthkim-hue.github.io/heliostack/
 
-![HelioStack v0.3.0 Verified Benchmarks — Copernicus Alps, EU Cyprus, US DOE PVDAQ #2107 & OpenFOAM 14](./docs/assets/heliostack_hero_validation.svg)
+![HelioStack v0.3.1 Verified Benchmarks — Copernicus Alps, EU Cyprus, US DOE PVDAQ #2107 & OpenFOAM 14](./docs/assets/heliostack_hero_validation.svg)
 
 > **Key Counter-Intuitive Physics Finding (Verified Open):** Pontoon Floating PV drops daytime cell temperatures by `-3.59 °C` to `-5.77 °C` (`+14–20%` total heat rejection in OpenFOAM 14 `28°` CFD), **yet** dark water albedo (`0.08` vs land `0.20`) reduces rear-side bifacial gain—delivering net annual yield gains in hot climates (**Seville `+0.38%`**) while flipping slightly negative in cooler Northern Europe (**Amsterdam `-0.68%`**).
 
@@ -74,7 +74,7 @@ Commercial Windows-only tools (`PVsyst`, `PV*SOL`, `HOMER Pro`) and closed cloud
 
 ---
 
-## Phase 3 Validation (`v0.3.0`): OpenFOAM 14 CFD & European Full-Year Field Testbed
+## Phase 3 Validation (`v0.3.1`): OpenFOAM 14 CFD & European Full-Year Field Testbed
 
 ### 1. Reproducible OpenFOAM 14 `28°`-Tilted PV Thermal Sweep (`foamRun -solver fluid`, 5,910 cells)
 | Mounting Surface | Clearance / Soil or Water Boundary | Wind Convective Fit (`h_conv(v)`) | Longwave `h_rad` | OpenFOAM Faiman Eq. (`u0`, `u1`) |
@@ -110,8 +110,9 @@ Commercial Windows-only tools (`PVsyst`, `PV*SOL`, `HOMER Pro`) and closed cloud
 ## Quick Start
 
 ```bash
-# Option A: Install directly from GitHub Release or source
-pip install "git+https://github.com/ttthkim-hue/heliostack.git@v0.3.0"
+# Option A: Install from PyPI (recommended) or directly from GitHub tag
+pip install heliostack
+pip install "git+https://github.com/ttthkim-hue/heliostack.git@v0.3.1"
 
 # Option B: Editable developer install
 git clone https://github.com/ttthkim-hue/heliostack.git
@@ -136,3 +137,12 @@ python openfoam/run_openfoam_pv_sweep.py
 # 4. Preview offline interactive Web UI locally
 heliostack serve --dir docs --port 8780
 ```
+
+---
+
+## License & Academic Openness (`AGPL-3.0-or-later`)
+
+`HelioStack` is 100% open source under the **GNU Affero General Public License v3.0 or later ([`LICENSE`](./LICENSE))**:
+- **Permanent Free Use for Graduate Students, Researchers & Open Science:** Run simulations, couple OpenFOAM CFD cases, audit `.PAN`/`.OND` inputs, and host open academic web tools freely with full source inspection and reproducibility.
+- **Anti-Enclosure Guarantee:** Hosted SaaS or commercial forks exposing modified solvers over a network must contribute their modifications back under `AGPL-3.0-or-later`, preventing closed proprietary enclosure of public research engineering.
+- **Optional Commercial Dual-Licensing:** Proprietary commercial integrators seeking closed-source embedding without AGPL-3.0 reciprocity may contact the copyright holder separately for commercial dual-licensing or custom enterprise engineering agreements.

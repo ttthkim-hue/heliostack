@@ -1,6 +1,6 @@
 # OpenFOAM 14 Canonical Tilted PV Convective & Floating-PV Thermal Case
 
-This directory contains a reproducible, MIT-licensed 2D steady-state RANS (`kOmegaSST`) CFD sweep built for **OpenFOAM 14 (`foamRun -solver fluid`)** using structured 8-block `blockMesh` geometry around a **`28°`-tilted `2.0 m` photovoltaic module** in crosswind over:
+This directory contains a reproducible, AGPL-3.0-licensed 2D steady-state RANS (`kOmegaSST`) CFD sweep built for **OpenFOAM 14 (`foamRun -solver fluid`)** using structured 8-block `blockMesh` geometry around a **`28°`-tilted `2.0 m` photovoltaic module** in crosswind over:
 
 1. **Sunlit Land Rack (`land_rack`):** `0.85 m` ground clearance above sunlit soil at `+35 °C`, outdoor freestream air `+25 °C` (`10%` turbulence intensity), heated PV module `+50 °C`.
 2. **Floating PV Pontoon (`floating_pv`):** `0.25 m` pontoon clearance above reservoir water at `+21 °C`, outdoor freestream air `+25 °C`, heated PV module `+50 °C`.

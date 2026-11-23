@@ -54,15 +54,15 @@ def main() -> None:
             "8,760-hr HiGHS LiFePO4 curtailment-recovery dispatch LP & RO-Crate 1.1 audit",
         ],
         "nlnet_restack_v10_funded_milestones_eur_42000": [
-            "M1 (EUR 10k): Full 3D string-level electrical mismatch, bypass diode I-V shading, single/dual-axis trackers",
-            "M2 (EUR 12k): Full 3D multi-row turbulent CHT OpenFOAM atlas covering BIPV ventilated facades, agrivoltaics & wave-tilted FPV",
-            "M3 (EUR 12k): 25-year probabilistic Monte-Carlo P50/P90/P99 bankability, SEI battery degradation & EU ENTSO-E negative-price MILP",
-            "M4 (EUR 8k): Local browser WebAssembly/WebGL CAD scene editor, open crowd-verified equipment DB, Debian/Nix/PyPI packaging & WCAG audit",
+            "M1 (EUR 10k, 143h): Full 3D string-level electrical mismatch, bypass diode I-V shading, single/dual-axis trackers",
+            "M2 (EUR 16k, 228h): Flagship 3D multi-row turbulent CHT OpenFOAM atlas covering BIPV ventilated facades, agrivoltaics & wave-tilted FPV + academic benchmark paper pack",
+            "M3 (EUR 10k, 143h): 25-year probabilistic Monte-Carlo P50/P90/P99 bankability, SEI battery degradation & EU ENTSO-E negative-price MILP",
+            "M4 (EUR 6k, 86h): Local browser WebAssembly/WebGL CAD scene editor, open crowd-verified equipment DB, Debian/Nix/PyPI packaging & WCAG audit",
         ],
     }
 
     payload = {
-        "engine_version": "0.3.0",
+        "engine_version": "0.3.1",
         "elapsed_s": round(time.perf_counter() - t0, 2),
         "openfoam14_thermal_surrogate": cfd_surrogate,
         "eu_cyprus_field_validation": val_cy,

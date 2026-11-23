@@ -133,7 +133,7 @@ def render_bankable_html(result: SimulationResult) -> str:
     <tr><td>Annual Export Revenue &amp; Payback</td><td>EUR {ess.revenue_no_ess_eur_yr:,.0f}/yr</td><td>EUR {ess.revenue_with_ess_eur_yr:,.0f}/yr (+{ess.revenue_uplift_eur_yr:,.0f}/yr, ESS payback {esc(payback_txt)})</td></tr>
   </table>
   <div class="foot">
-    Deterministic execution with 0% generative AI at runtime &middot; HiGHS LP max hourly residual: {ess.max_hourly_conservation_err_kw:.2e} kW &middot; Verified MIT Open Source (`heliostack` v{esc(__version__)}).
+    Deterministic execution with 0% generative AI at runtime &middot; HiGHS LP max hourly residual: {ess.max_hourly_conservation_err_kw:.2e} kW &middot; Verified AGPL-3.0-or-later Open Source (`heliostack` v{esc(__version__)}).
   </div>
 </div>
 </body>
@@ -175,7 +175,7 @@ def write_audit_bundle(
     repro_payload = {
         "schema": "heliostack.repro-manifest.v1",
         "engine_version": __version__,
-        "license": "MIT",
+        "license": "AGPL-3.0-or-later",
         "runtime_environment": {
             "external_llm_used_at_runtime": False,
             "deterministic_physics_solver": "pvlib_single_diode + scipy_highs_lp",
@@ -196,7 +196,7 @@ def write_audit_bundle(
             "@id": "./",
             "@type": "Dataset",
             "name": f"HelioStack Bankable Simulation Audit: {result.site.site_name}",
-            "license": "https://opensource.org/licenses/MIT",
+            "license": "https://www.gnu.org/licenses/agpl-3.0.html",
             "hasPart": [
                 {"@id": "audit_report.json"},
                 {"@id": "bankable_report.html"},
