@@ -38,6 +38,7 @@ dependencies = [
   "scipy>=1.12.0",
   "pandas>=2.2.0",
   "pvlib>=0.11.0",
+  "requests>=2.31.0",
 ]
 
 [project.optional-dependencies]

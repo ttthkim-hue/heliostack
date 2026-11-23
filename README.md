@@ -74,9 +74,33 @@ Commercial Windows-only tools (`PVsyst`, `PV*SOL`, `HOMER Pro`) and closed cloud
 
 ---
 
+## Live Interactive Workbench
+
+- **Browser Simulator (Zero Server Required):** https://ttthkim-hue.github.io/heliostack/
+
+---
+
+## How HelioStack Complements Existing Open-Source Tools
+
+| Existing Open Tool | Primary Focus | What Remains Unsolved End-to-End |
+| :--- | :--- | :--- |
+| **`pvlib-python`** (used inside HelioStack) | Low-level solar position, transposition & single-diode math | Unified `.PAN`/`.OND` validation + 3D shading + Copernicus horizon + CFD thermal + HiGHS ESS + `RO-Crate 1.1` audit |
+| **`NREL / SAM`** | Desktop GUI simulator for US policies & buildings | Lightweight Python/CLI microservice, Copernicus EU horizon, OpenFOAM FPV cooling, reproducible cryptographic bundles |
+| **`open-pv / simshady`** | Browser JavaScript 3D shadow casting | Bankable 8,760-hr energy loss tree, single-diode electrical yield & ESS optimization |
+| **`PyPSA` / `oemof`** | Macro grid / national transmission LP optimization | Site-level PVsyst-grade `.PAN`/`.OND` single-diode modeling, 3D/DEM shade & micro-thermal physics |
+| **`Bifacial_Radiance`** | Radiance backward ray-tracing optics | Fast CPU engineering workbench integrating thermal CFD, ESS curtailment LP & `RO-Crate 1.1` provenance |
+
+---
+
 ## Quick Start
 
 ```bash
+# Option A: Install directly from GitHub Release or source
+pip install "git+https://github.com/ttthkim-hue/heliostack.git@v0.3.0"
+
+# Option B: Editable developer install
+git clone https://github.com/ttthkim-hue/heliostack.git
+cd heliostack
 pip install -e ".[dev]"
 
 # 1. Validate .PAN / .OND specifications (exit 0 on valid, exit 1 on physics failure)

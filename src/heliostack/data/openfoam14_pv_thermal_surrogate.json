@@ -1,0 +1,198 @@
+{
+  "solver": "OpenFOAM 14 (foamRun -solver fluid, steady kOmegaSST, heRhoThermo ideal gas air, 28-deg tilted PV)",
+  "domain_m": {
+    "x": [
+      -4.0,
+      10.0
+    ],
+    "y": [
+      0.0,
+      5.5
+    ],
+    "tilt_deg": 28.0,
+    "chord_m": 2.0
+  },
+  "cells": 5910,
+  "t_amb_c": 25.0,
+  "t_sky_c": 13.0,
+  "t_panel_c": 50.0,
+  "natural_convection_h_w_m2k": 6.402,
+  "thermal_absorptance_factor": 0.729,
+  "total_wall_s": 171.59,
+  "surfaces": {
+    "land_rack": {
+      "ground_boundary_temp_c": 35.0,
+      "clearance_m": 0.85,
+      "radiative_effective_h_w_m2k": 11.738,
+      "cases": [
+        {
+          "surface": "land_rack",
+          "wind_speed_ms": 1.0,
+          "clearance_m": 0.85,
+          "t_ground_k": 308.15,
+          "final_step": 800,
+          "q_panel_top_w_m2": 104.476,
+          "q_panel_bottom_w_m2": 62.604,
+          "h_conv_top_w_m2k": 4.179,
+          "h_conv_bottom_w_m2k": 2.504,
+          "h_conv_total_w_m2k": 6.683,
+          "h_rad_eff_w_m2k": 11.738,
+          "h_total_with_rad_w_m2k": 18.421,
+          "elapsed_s": 23.71,
+          "foam_log_sha256": "b49c199232b3ae49e6bfb517b9664405493f32f34257fca33f247888839f5686",
+          "step_bot": 800
+        },
+        {
+          "surface": "land_rack",
+          "wind_speed_ms": 2.0,
+          "clearance_m": 0.85,
+          "t_ground_k": 308.15,
+          "final_step": 800,
+          "q_panel_top_w_m2": 184.37,
+          "q_panel_bottom_w_m2": 100.121,
+          "h_conv_top_w_m2k": 7.375,
+          "h_conv_bottom_w_m2k": 4.005,
+          "h_conv_total_w_m2k": 11.38,
+          "h_rad_eff_w_m2k": 11.738,
+          "h_total_with_rad_w_m2k": 23.117,
+          "elapsed_s": 20.49,
+          "foam_log_sha256": "0d6aac8049e24c1ac556d1177f87b1f49ceb8a015e739eaf6529b1398345fddc",
+          "step_bot": 800
+        },
+        {
+          "surface": "land_rack",
+          "wind_speed_ms": 4.0,
+          "clearance_m": 0.85,
+          "t_ground_k": 308.15,
+          "final_step": 800,
+          "q_panel_top_w_m2": 317.551,
+          "q_panel_bottom_w_m2": 164.802,
+          "h_conv_top_w_m2k": 12.702,
+          "h_conv_bottom_w_m2k": 6.592,
+          "h_conv_total_w_m2k": 19.294,
+          "h_rad_eff_w_m2k": 11.738,
+          "h_total_with_rad_w_m2k": 31.032,
+          "elapsed_s": 20.97,
+          "foam_log_sha256": "4807da931136a644f2e529886196058be8f955600e93561735e429693f633d91",
+          "step_bot": 800
+        },
+        {
+          "surface": "land_rack",
+          "wind_speed_ms": 6.0,
+          "clearance_m": 0.85,
+          "t_ground_k": 308.15,
+          "final_step": 800,
+          "q_panel_top_w_m2": 436.816,
+          "q_panel_bottom_w_m2": 221.335,
+          "h_conv_top_w_m2k": 17.473,
+          "h_conv_bottom_w_m2k": 8.853,
+          "h_conv_total_w_m2k": 26.326,
+          "h_rad_eff_w_m2k": 11.738,
+          "h_total_with_rad_w_m2k": 38.064,
+          "elapsed_s": 20.13,
+          "foam_log_sha256": "a429fe0161eadb0e8bbdef1c941d691ba836358fb05bd5f14f125a6570fe89ce",
+          "step_bot": 800
+        }
+      ],
+      "h_conv_raw_linear_fit_w_m2k": {
+        "c0": 3.228,
+        "c1": 3.905
+      },
+      "h_conv_linear_fit_w_m2k": {
+        "c0": 4.705,
+        "c1": 3.648
+      },
+      "faiman_equivalent": {
+        "u0": 22.56,
+        "u1": 5.0
+      }
+    },
+    "floating_pv": {
+      "ground_boundary_temp_c": 21.0,
+      "clearance_m": 0.25,
+      "radiative_effective_h_w_m2k": 14.688,
+      "cases": [
+        {
+          "surface": "floating_pv",
+          "wind_speed_ms": 1.0,
+          "clearance_m": 0.25,
+          "t_ground_k": 294.15,
+          "final_step": 800,
+          "q_panel_top_w_m2": 106.716,
+          "q_panel_bottom_w_m2": 79.699,
+          "h_conv_top_w_m2k": 4.269,
+          "h_conv_bottom_w_m2k": 3.188,
+          "h_conv_total_w_m2k": 7.457,
+          "h_rad_eff_w_m2k": 14.688,
+          "h_total_with_rad_w_m2k": 22.144,
+          "elapsed_s": 19.15,
+          "foam_log_sha256": "69ed9e1b60e55221c4dae48133c99f22976a5362be215f8c97a586ce0d44628a",
+          "step_bot": 800
+        },
+        {
+          "surface": "floating_pv",
+          "wind_speed_ms": 2.0,
+          "clearance_m": 0.25,
+          "t_ground_k": 294.15,
+          "final_step": 800,
+          "q_panel_top_w_m2": 190.248,
+          "q_panel_bottom_w_m2": 108.233,
+          "h_conv_top_w_m2k": 7.61,
+          "h_conv_bottom_w_m2k": 4.329,
+          "h_conv_total_w_m2k": 11.939,
+          "h_rad_eff_w_m2k": 14.688,
+          "h_total_with_rad_w_m2k": 26.627,
+          "elapsed_s": 20.31,
+          "foam_log_sha256": "5cf9d50970dad5c57ae32bdb9baf67e15c318c5f01c847e0a2c83a0f576c9d5f",
+          "step_bot": 800
+        },
+        {
+          "surface": "floating_pv",
+          "wind_speed_ms": 4.0,
+          "clearance_m": 0.25,
+          "t_ground_k": 294.15,
+          "final_step": 800,
+          "q_panel_top_w_m2": 326.685,
+          "q_panel_bottom_w_m2": 194.032,
+          "h_conv_top_w_m2k": 13.067,
+          "h_conv_bottom_w_m2k": 7.761,
+          "h_conv_total_w_m2k": 20.829,
+          "h_rad_eff_w_m2k": 14.688,
+          "h_total_with_rad_w_m2k": 35.517,
+          "elapsed_s": 22.01,
+          "foam_log_sha256": "a96d80041dab530526249d9541a8bc5415063bd66c11aa2ba63ba69ef5829a68",
+          "step_bot": 800
+        },
+        {
+          "surface": "floating_pv",
+          "wind_speed_ms": 6.0,
+          "clearance_m": 0.25,
+          "t_ground_k": 294.15,
+          "final_step": 800,
+          "q_panel_top_w_m2": 461.611,
+          "q_panel_bottom_w_m2": 237.907,
+          "h_conv_top_w_m2k": 18.464,
+          "h_conv_bottom_w_m2k": 9.516,
+          "h_conv_total_w_m2k": 27.981,
+          "h_rad_eff_w_m2k": 14.688,
+          "h_total_with_rad_w_m2k": 42.669,
+          "elapsed_s": 21.9,
+          "foam_log_sha256": "e7b969ef509db4f0e177c45174d95a151a10ade9e72a6aded0ad8d2e2b8139f7",
+          "step_bot": 800
+        }
+      ],
+      "h_conv_raw_linear_fit_w_m2k": {
+        "c0": 3.64,
+        "c1": 4.127
+      },
+      "h_conv_linear_fit_w_m2k": {
+        "c0": 4.912,
+        "c1": 3.906
+      },
+      "faiman_equivalent": {
+        "u0": 26.89,
+        "u1": 5.36
+      }
+    }
+  }
+}

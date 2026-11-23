@@ -13,6 +13,9 @@ import pvlib
 
 from heliostack.models import SiteConfig
 
+PACKAGE_CFD_SURROGATE_PATH = (
+    Path(__file__).resolve().parent / "data" / "openfoam14_pv_thermal_surrogate.json"
+)
 DEFAULT_CFD_SURROGATE_PATH = (
     Path(__file__).resolve().parents[2]
     / "fixtures"
@@ -31,7 +34,12 @@ def _read_surrogate_cached(path_str: str) -> dict[str, Any]:
 
 def load_openfoam_surrogate(path: Path | None = None) -> dict[str, Any]:
     """Load verified OpenFOAM 14 tilted-PV thermal surrogate table."""
-    target = (path or DEFAULT_CFD_SURROGATE_PATH).resolve()
+    if path is not None:
+        target = path.resolve()
+    elif PACKAGE_CFD_SURROGATE_PATH.is_file():
+        target = PACKAGE_CFD_SURROGATE_PATH.resolve()
+    else:
+        target = DEFAULT_CFD_SURROGATE_PATH.resolve()
     return _read_surrogate_cached(str(target))
 
 
