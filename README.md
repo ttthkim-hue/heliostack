@@ -1,15 +1,17 @@
-# HelioStack v0.2.0
+# HelioStack v0.3.0
 
-**Deterministic open-source solar PV, 3D ray-cast & Copernicus DEM terrain shading, convective/Floating-PV thermal, and HiGHS `LiFePO4` ESS optimization workbench with `RO-Crate 1.1` & `SHA-256` audit provenance.**
+**Deterministic open-source solar PV, 3D ray-cast & Copernicus DEM terrain shading, OpenFOAM 14 CFD land/Floating-PV thermal, and HiGHS `LiFePO4` ESS optimization workbench with `RO-Crate 1.1` & `SHA-256` audit provenance.**
 
 - **License:** MIT (`100%` OSI-permissive open source; `0%` generative AI or closed vendor APIs at runtime)
-- **Live Data & Field Validation:**
+- **Live Data, CFD & Dual-Continent Field Validation:**
   1. European Commission **PVGIS v5.3** (`SARAH3` & `ERA5`) hourly TMY & `PVcalc` cross-validation across 4 baseline climates
   2. **Copernicus DEM** 36-azimuth ray-cast terrain horizon vs EU PVGIS `printhorizon` across Innsbruck, Bolzano, and Zermatt (`MAE 1.25–1.57°`)
-  3. Real **892.8 kWp** revenue meter telemetry (**US DOE / NREL PVDAQ #2107**, 2024 `3,255` daylight operating hours, `R² = 0.9101`, `MBE = +3.81%`, `nRMSE = 6.79%`)
-  4. Canonical **`pvlib ModelChain`** parity check (`-0.67%` Amsterdam, `+0.31%` Seville) + 12-step PVsyst-style loss tree
+  3. **OpenFOAM 14 (`foamRun -solver fluid`, steady `kOmegaSST`)** `28°`-tilted PV convective sweep (`5,910` cells, 8 cases) calibrating land vs pontoon Floating-PV cooling
+  4. **European Union 1-Year Outdoor Testbed** (**University of Cyprus PHAETHON CoE**, `8,784` full hours, `CC-BY-4.0`): `Tmod RMSE 2.18 °C` (`open_rack R² 0.9705`) / `4.19 °C` (`OpenFOAM 14 R² 0.8906`), full-year DC `R² 0.9887`
+  5. Real **892.8 kWp** US utility meter telemetry (**US DOE / NREL PVDAQ #2107**, 2024 `3,255` daylight operating hours, `R² = 0.9101`, `MBE = +3.81%`, `nRMSE = 6.79%`)
+  6. Canonical **`pvlib ModelChain`** parity check (`-0.67%` Amsterdam, `+0.31%` Seville) + 12-step PVsyst-style loss tree
 - **AI Transparency:** [`AI_DISCLOSURE.md`](./AI_DISCLOSURE.md)
-- **Road to NLnet (`2027-01-03`):** [`docs/ROADMAP_TO_NLNET_20270103.md`](./docs/ROADMAP_TO_NLNET_20270103.md)
+- **NLnet Scope & Roadmap (`2027-01-03`):** [`docs/ROADMAP_TO_NLNET_20270103.md`](./docs/ROADMAP_TO_NLNET_20270103.md)
 
 ---
 
@@ -57,6 +59,21 @@ Commercial Windows-only tools (`PVsyst`, `PV*SOL`, `HOMER Pro`) and closed cloud
 
 ---
 
+## Phase 3 Validation (`v0.3.0`): OpenFOAM 14 CFD & European Full-Year Field Testbed
+
+### 1. Reproducible OpenFOAM 14 `28°`-Tilted PV Thermal Sweep (`foamRun -solver fluid`, 5,910 cells)
+| Mounting Surface | Clearance / Soil or Water Boundary | Wind Convective Fit (`h_conv(v)`) | Longwave `h_rad` | OpenFOAM Faiman Eq. (`u0`, `u1`) |
+| :--- | :---: | :---: | :---: | :---: |
+| **Land Rack** | `0.85 m` over `+35 °C` sunlit soil | `4.705 + 3.648·v W/m²K` | `11.738 W/m²K` | `u0 = 22.56`, `u1 = 5.00` |
+| **Floating PV** | `0.25 m` over `+21 °C` reservoir water | `4.912 + 3.906·v W/m²K` | `14.688 W/m²K` | `u0 = 26.89`, `u1 = 5.36` |
+
+### 2. European Union 1-Year Field Validation (University of Cyprus PHAETHON CoE, `8,784` hrs, `CC-BY-4.0`)
+- Dataset: June 2015 – May 2016 (`3,935` daylight operating hours, DOI `10.5281/zenodo.10816826`).
+- **Thermal Accuracy (`Tmod` backsheet PT100):** `open_rack` `RMSE = 2.18 °C` (`R² = 0.9705`), `convective_land` `RMSE = 2.22 °C` (`R² = 0.9693`), pure **OpenFOAM 14 `cfd_land`** (zero Cyprus tuning) `RMSE = 4.19 °C` (`R² = 0.8906`).
+- **Full-Year Yield Accuracy:** Measured `2,450 kWh` DC vs Modeled `2,410 kWh` (`MBE = -1.62%`, `nRMSE = 2.85%`, `R² = 0.9887`; AC `MBE = -1.01%`, `R² = 0.9876`).
+
+---
+
 ## Quick Start
 
 ```bash
@@ -69,9 +86,13 @@ heliostack validate fixtures/equipment/invalid_module.pan
 # 2. Extract 36-azimuth Copernicus DEM terrain horizon vs EU PVGIS printhorizon
 heliostack horizon --lat 47.2692 --lon 11.4041 --cache-dir fixtures/weather
 
-# 3. Run full Phase 1 + Phase 2 reproducible benchmarks
+# 3. Run full Phase 1 + Phase 2 + Phase 3 reproducible benchmarks
 python benchmarks/run_europe_benchmark.py
 python benchmarks/run_phase2_validation.py
+python benchmarks/run_phase3_validation.py
+
+# (Optional in WSL2 / Linux with OpenFOAM 14 installed):
+python openfoam/run_openfoam_pv_sweep.py
 
 # 4. Preview offline interactive Web UI locally
 heliostack serve --dir docs --port 8780

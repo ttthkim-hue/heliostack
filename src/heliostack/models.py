@@ -125,7 +125,7 @@ class SiteConfig:
     dc_wiring_loss_frac: float = 0.015
     mismatch_loss_frac: float = 0.015
     availability_frac: float = 0.99
-    mounting_mode: str = "open_rack"  # "open_rack" | "convective_land" | "floating_pv"
+    mounting_mode: str = "open_rack"  # "open_rack" | "convective_land" | "floating_pv" | "cfd_land" | "cfd_floating_pv"
     use_3d_shading: bool = True
     obstacles: list[ObstacleBox3D] = field(default_factory=list)
     horizon_elev_deg_36: list[float] = field(default_factory=lambda: [0.0] * 36)

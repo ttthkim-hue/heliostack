@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "heliostack"
-version = "0.2.0"
+version = "0.3.0"
 description = "Deterministic open-source solar PV, 3D ray-cast shading, CFD-informed thermal, and HiGHS LiFePO4 ESS optimization engine with RO-Crate 1.1 audit provenance."
 readme = "README.md"
 license = { text = "MIT" }

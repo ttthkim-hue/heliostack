@@ -2,11 +2,37 @@
 
 from __future__ import annotations
 
+import functools
+import json
+from pathlib import Path
+from typing import Any
+
 import numpy as np
 import pandas as pd
 import pvlib
 
 from heliostack.models import SiteConfig
+
+DEFAULT_CFD_SURROGATE_PATH = (
+    Path(__file__).resolve().parents[2]
+    / "fixtures"
+    / "thermal"
+    / "openfoam14_pv_thermal_surrogate.json"
+)
+
+
+@functools.lru_cache(maxsize=4)
+def _read_surrogate_cached(path_str: str) -> dict[str, Any]:
+    path = Path(path_str)
+    if not path.is_file():
+        raise FileNotFoundError(f"OpenFOAM thermal surrogate JSON not found: {path}")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def load_openfoam_surrogate(path: Path | None = None) -> dict[str, Any]:
+    """Load verified OpenFOAM 14 tilted-PV thermal surrogate table."""
+    target = (path or DEFAULT_CFD_SURROGATE_PATH).resolve()
+    return _read_surrogate_cached(str(target))
 
 
 def estimate_water_surface_temp(temp_air_c: pd.Series, wind_speed_ms: pd.Series) -> pd.Series:
@@ -57,6 +83,22 @@ def compute_cell_temperature(
         # Free-over-water fetch enhances wind turbulence & convective coefficients
         u_fpv = 31.5 + 8.9 * (1.12 * ws)
         t_cell_arr = t_sink + poa / u_fpv
+        return pd.Series(t_cell_arr, index=temp_air.index, name="temp_cell_c")
+
+    if mode == "cfd_land":
+        surrogate = load_openfoam_surrogate()
+        eq = surrogate["surfaces"]["land_rack"]["faiman_equivalent"]
+        u_cfd = float(eq["u0"]) + float(eq["u1"]) * ws
+        t_cell_arr = ta + poa / u_cfd
+        return pd.Series(t_cell_arr, index=temp_air.index, name="temp_cell_c")
+
+    if mode == "cfd_floating_pv":
+        surrogate = load_openfoam_surrogate()
+        eq = surrogate["surfaces"]["floating_pv"]["faiman_equivalent"]
+        t_water = estimate_water_surface_temp(temp_air, wind_speed).to_numpy(dtype=float)
+        t_sink = 0.60 * ta + 0.40 * t_water
+        u_cfd = float(eq["u0"]) + float(eq["u1"]) * ws
+        t_cell_arr = t_sink + poa / u_cfd
         return pd.Series(t_cell_arr, index=temp_air.index, name="temp_cell_c")
 
     raise ValueError(f"Unsupported mounting_mode: {site.mounting_mode!r}")
