@@ -76,19 +76,24 @@ def fetch_pvgis_tmy(
     longitude: float,
     cache_dir: Path | None = None,
     timeout_s: int = 30,
+    use_horizon: bool = True,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
     """Fetch (or read deterministic cache of) real 8,760-hr PVGIS v5.3 TMY data."""
+    suffix = "" if use_horizon else "_nohor"
     cache_file = (
-        cache_dir / f"pvgis_tmy_{latitude:.4f}_{longitude:.4f}.json" if cache_dir else None
+        cache_dir / f"pvgis_tmy_{latitude:.4f}_{longitude:.4f}{suffix}.json" if cache_dir else None
     )
     if cache_file and cache_file.is_file():
         raw_bytes = cache_file.read_bytes()
         cache_hit = True
     else:
         url = f"{PVGIS_BASE_URL}/tmy"
+        params: dict[str, Any] = {"lat": latitude, "lon": longitude, "outputformat": "json"}
+        if not use_horizon:
+            params["usehorizon"] = 0
         resp = requests.get(
             url,
-            params={"lat": latitude, "lon": longitude, "outputformat": "json"},
+            params=params,
             timeout=timeout_s,
         )
         resp.raise_for_status()
@@ -102,6 +107,7 @@ def fetch_pvgis_tmy(
     df, prov = parse_pvgis_tmy_payload(payload)
     prov["payload_sha256"] = hashlib.sha256(raw_bytes).hexdigest()
     prov["cache_hit"] = cache_hit
+    prov["use_horizon"] = use_horizon
     return df, prov
 
 
@@ -114,11 +120,13 @@ def fetch_pvgis_pvcalc(
     surface_azimuth_deg: float,
     cache_dir: Path | None = None,
     timeout_s: int = 30,
+    use_horizon: bool = True,
 ) -> dict[str, Any]:
     """Fetch official EU PVGIS v5.3 PVcalc annual & monthly yield reference."""
     aspect = pvlib_azimuth_to_pvgis_aspect(surface_azimuth_deg)
+    suffix = "" if use_horizon else "_nohor"
     cache_file = (
-        cache_dir / f"pvgis_pvcalc_{latitude:.4f}_{longitude:.4f}_{tilt_deg:.1f}_{aspect:.1f}.json"
+        cache_dir / f"pvgis_pvcalc_{latitude:.4f}_{longitude:.4f}_{tilt_deg:.1f}_{aspect:.1f}{suffix}.json"
         if cache_dir
         else None
     )
@@ -126,17 +134,20 @@ def fetch_pvgis_pvcalc(
         raw_bytes = cache_file.read_bytes()
     else:
         url = f"{PVGIS_BASE_URL}/PVcalc"
+        params: dict[str, Any] = {
+            "lat": latitude,
+            "lon": longitude,
+            "peakpower": peakpower_kw,
+            "loss": loss_pct,
+            "angle": tilt_deg,
+            "aspect": aspect,
+            "outputformat": "json",
+        }
+        if not use_horizon:
+            params["usehorizon"] = 0
         resp = requests.get(
             url,
-            params={
-                "lat": latitude,
-                "lon": longitude,
-                "peakpower": peakpower_kw,
-                "loss": loss_pct,
-                "angle": tilt_deg,
-                "aspect": aspect,
-                "outputformat": "json",
-            },
+            params=params,
             timeout=timeout_s,
         )
         resp.raise_for_status()

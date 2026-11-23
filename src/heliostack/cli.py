@@ -15,6 +15,11 @@ from heliostack.audit import write_audit_bundle
 from heliostack.ess_optimizer import run_full_simulation
 from heliostack.formats import parse_ond, parse_pan, validate_equipment_path
 from heliostack.models import ObstacleBox3D, SiteConfig
+from heliostack.terrain import (
+    compare_horizon_profiles,
+    fetch_copernicus_dem_horizon,
+    fetch_pvgis_horizon,
+)
 from heliostack.weather import fetch_pvgis_tmy, load_cached_tmy
 
 
@@ -71,6 +76,18 @@ def _cmd_simulate(args: argparse.Namespace) -> int:
         cache_dir = Path(args.cache_dir) if args.cache_dir else None
         weather, prov = fetch_pvgis_tmy(site.latitude, site.longitude, cache_dir=cache_dir)
 
+    auto_hor = getattr(args, "auto_horizon", "none")
+    if auto_hor != "none":
+        hor_cache = Path(args.cache_dir) if args.cache_dir else None
+        if auto_hor == "copernicus":
+            site.horizon_elev_deg_36, _ = fetch_copernicus_dem_horizon(
+                site.latitude, site.longitude, cache_dir=hor_cache
+            )
+        elif auto_hor == "pvgis":
+            site.horizon_elev_deg_36, _ = fetch_pvgis_horizon(
+                site.latitude, site.longitude, cache_dir=hor_cache
+            )
+
     result = run_full_simulation(
         weather=weather,
         weather_provenance=prov,
@@ -88,6 +105,31 @@ def _cmd_simulate(args: argparse.Namespace) -> int:
         f"Curtailment Recovery={ess.curtailment_recovery_pct:.1f}% | LCOE=EUR {ess.lcoe_eur_kwh:.4f}/kWh"
     )
     print(f"RO-Crate bundle written to: {paths['ro_crate']}")
+    return 0
+
+
+def _cmd_horizon(args: argparse.Namespace) -> int:
+    cache_dir = Path(args.cache_dir) if args.cache_dir else None
+    h_cop, meta_cop = fetch_copernicus_dem_horizon(args.lat, args.lon, cache_dir=cache_dir)
+    h_pvgis, meta_pvg = fetch_pvgis_horizon(args.lat, args.lon, cache_dir=cache_dir)
+    stats = compare_horizon_profiles(h_cop, h_pvgis)
+    payload = {
+        "latitude": args.lat,
+        "longitude": args.lon,
+        "comparison": stats,
+        "copernicus_meta": meta_cop,
+        "pvgis_meta": meta_pvg,
+        "copernicus_horizon_deg_36": h_cop,
+        "pvgis_horizon_deg_36": h_pvgis,
+    }
+    if args.json:
+        print(json.dumps(payload, indent=2))
+    else:
+        print(
+            f"Horizon ({args.lat:.4f}, {args.lon:.4f}) | Elev={meta_cop['site_elevation_m']} m | "
+            f"Copernicus mean={stats['mean_copernicus_deg']:.2f} deg vs PVGIS mean={stats['mean_pvgis_deg']:.2f} deg | "
+            f"MAE={stats['mae_deg']:.2f} deg, RMSE={stats['rmse_deg']:.2f} deg"
+        )
     return 0
 
 
@@ -118,7 +160,20 @@ def build_parser() -> argparse.ArgumentParser:
     p_sim.add_argument("-o", "--output", default="outputs/run", help="Output bundle directory")
     p_sim.add_argument("--weather", default="", help="Optional cached CSV/PVGIS JSON weather file")
     p_sim.add_argument("--cache-dir", default="", help="Optional cache directory for PVGIS downloads")
+    p_sim.add_argument(
+        "--auto-horizon",
+        choices=("none", "pvgis", "copernicus"),
+        default="none",
+        help="Automatically fetch 36-azimuth terrain horizon from Copernicus DEM or EU PVGIS",
+    )
     p_sim.set_defaults(func=_cmd_simulate)
+
+    p_hor = sub.add_parser("horizon", help="Compute Copernicus DEM horizon and compare with EU PVGIS")
+    p_hor.add_argument("--lat", type=float, required=True, help="Site latitude")
+    p_hor.add_argument("--lon", type=float, required=True, help="Site longitude")
+    p_hor.add_argument("--cache-dir", default="", help="Optional cache directory for elevation downloads")
+    p_hor.add_argument("--json", action="store_true", help="Emit JSON payload")
+    p_hor.set_defaults(func=_cmd_horizon)
 
     p_srv = sub.add_parser("serve", help="Serve static standalone Web UI locally")
     p_srv.add_argument("--dir", default="docs", help="Directory containing index.html")

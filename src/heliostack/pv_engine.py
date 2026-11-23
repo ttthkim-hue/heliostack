@@ -70,6 +70,65 @@ def _solve_single_diode_pmp(
     return max(0.0, float(sd["p_mp"]))
 
 
+def _evaluate_dc_ac_stage(
+    eff_irrad: np.ndarray,
+    t_cell: np.ndarray,
+    site: SiteConfig,
+    module: PVModuleSpec,
+    inverter: InverterSpec,
+    dc_aging_factor: float = 1.0,
+    inverter_count_override: int | None = None,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, float, float]:
+    """Shared deterministic single-diode DC + .OND inverter AC pipeline."""
+    i_l_ref, i_o_ref = derive_pvsyst_single_diode_params(module)
+    stc_p_mp = float(_solve_single_diode_pmp(1000.0, 25.0, module, i_l_ref, i_o_ref))
+    stc_scale = module.p_nom_w / max(1e-6, stc_p_mp)
+
+    active = eff_irrad > 1.0
+    dc_stc_temp_kw = np.zeros_like(eff_irrad)
+    dc_actual_kw = np.zeros_like(eff_irrad)
+    if np.any(active):
+        scale_kw = stc_scale * (site.dc_kwp / module.p_nom_w) * dc_aging_factor
+        t_iso = np.full(int(np.sum(active)), 25.0)
+        dc_stc_temp_kw[active] = _solve_single_diode_pmp(eff_irrad[active], t_iso, module, i_l_ref, i_o_ref) * scale_kw
+        dc_actual_kw[active] = _solve_single_diode_pmp(eff_irrad[active], t_cell[active], module, i_l_ref, i_o_ref) * scale_kw
+
+    dc_after_losses_kw = (
+        dc_actual_kw
+        * (1.0 - site.dc_wiring_loss_frac)
+        * (1.0 - site.mismatch_loss_frac)
+        * site.availability_frac
+    )
+
+    if inverter_count_override is not None:
+        n_inv = max(1, int(inverter_count_override))
+    elif site.dc_kwp > inverter.p_max_ac_kw * 1.3:
+        n_inv = max(1, round(site.dc_kwp / (inverter.p_nom_ac_kw * 1.15)))
+    else:
+        n_inv = 1
+
+    inv_nom_total_kw = n_inv * inverter.p_nom_ac_kw
+    inv_max_total_kw = n_inv * inverter.p_max_ac_kw
+    p_thresh_total = n_inv * inverter.p_threshold_kw
+    night_loss_total = n_inv * inverter.night_loss_kw
+
+    running = dc_after_losses_kw > p_thresh_total
+    load_frac = np.where(running, dc_after_losses_kw / max(1e-6, inv_nom_total_kw), 0.0)
+    eff_curve = _inverter_efficiency_fraction(load_frac, inverter)
+    ac_unclipped_kw = np.where(running, dc_after_losses_kw * eff_curve, 0.0)
+    ac_net_kw = np.where(running, np.minimum(ac_unclipped_kw, inv_max_total_kw), 0.0)
+    return (
+        dc_stc_temp_kw,
+        dc_actual_kw,
+        dc_after_losses_kw,
+        ac_unclipped_kw,
+        ac_net_kw,
+        running,
+        night_loss_total,
+        inv_max_total_kw,
+    )
+
+
 def run_pv_simulation(
     weather: pd.DataFrame,
     site: SiteConfig,
@@ -180,37 +239,18 @@ def run_pv_simulation(
         site=site,
     ).to_numpy(dtype=float)
 
-    # Single-diode DC physics calibrated cleanly to exact STC nameplate PNom
-    i_l_ref, i_o_ref = derive_pvsyst_single_diode_params(module)
-    stc_p_mp = float(_solve_single_diode_pmp(1000.0, 25.0, module, i_l_ref, i_o_ref))
-    stc_scale = module.p_nom_w / max(1e-6, stc_p_mp)
-
-    active = eff_irrad > 1.0
+    # Shared Single-Diode DC + .OND Inverter AC Stage
     dc_nominal_kw = site.dc_kwp * (eff_irrad / 1000.0)
-    dc_stc_temp_kw = np.zeros_like(eff_irrad)
-    dc_actual_kw = np.zeros_like(eff_irrad)
-
-    if np.any(active):
-        scale_kw = stc_scale * (site.dc_kwp / module.p_nom_w)
-        t_iso = np.full(int(np.sum(active)), 25.0)
-        dc_stc_temp_kw[active] = _solve_single_diode_pmp(eff_irrad[active], t_iso, module, i_l_ref, i_o_ref) * scale_kw
-        dc_actual_kw[active] = _solve_single_diode_pmp(eff_irrad[active], t_cell[active], module, i_l_ref, i_o_ref) * scale_kw
-
-    # DC wiring, mismatch, and availability
-    dc_after_losses_kw = dc_actual_kw * (1.0 - site.dc_wiring_loss_frac) * (1.0 - site.mismatch_loss_frac) * site.availability_frac
-
-    # Inverter scaling: realistic plant-matched inverter block when DC plant >> single unit
-    n_inv = max(1, round(site.dc_kwp / (inverter.p_nom_ac_kw * 1.15))) if site.dc_kwp > inverter.p_max_ac_kw * 1.3 else 1
-    inv_nom_total_kw = n_inv * inverter.p_nom_ac_kw
-    inv_max_total_kw = n_inv * inverter.p_max_ac_kw
-    p_thresh_total = n_inv * inverter.p_threshold_kw
-    night_loss_total = n_inv * inverter.night_loss_kw
-
-    running = dc_after_losses_kw > p_thresh_total
-    load_frac = np.where(running, dc_after_losses_kw / max(1e-6, inv_nom_total_kw), 0.0)
-    eff_curve = _inverter_efficiency_fraction(load_frac, inverter)
-    ac_unclipped_kw = np.where(running, dc_after_losses_kw * eff_curve, 0.0)
-    ac_net_kw = np.where(running, np.minimum(ac_unclipped_kw, inv_max_total_kw), 0.0)
+    (
+        dc_stc_temp_kw,
+        dc_actual_kw,
+        dc_after_losses_kw,
+        ac_unclipped_kw,
+        ac_net_kw,
+        running,
+        night_loss_total,
+        _,
+    ) = _evaluate_dc_ac_stage(eff_irrad, t_cell, site, module, inverter)
 
     # Loss waterfall aggregation (kWh/m^2 or %)
     ghi_sum = float(np.sum(ghi_arr)) / 1000.0
@@ -278,3 +318,58 @@ def run_pv_simulation(
         p99_kwh_yr=round(p99, 2),
     )
     return waterfall, ac_net_kw, poa_global_unshaded, t_cell
+
+
+def run_pv_from_measured_poa(
+    times: pd.DatetimeIndex,
+    poa_global: np.ndarray,
+    temp_air: np.ndarray,
+    wind_speed: np.ndarray,
+    wind_direction: np.ndarray,
+    site: SiteConfig,
+    module: PVModuleSpec,
+    inverter: InverterSpec,
+    dc_aging_factor: float = 1.0,
+    inverter_count_override: int | None = None,
+) -> dict[str, np.ndarray | float]:
+    """Run deterministic PV DC/AC pipeline directly from measured POA telemetry."""
+    loc = pvlib.location.Location(site.latitude, site.longitude, altitude=site.elevation_m, tz="UTC")
+    solpos = loc.get_solarposition(times)
+    aoi = pvlib.irradiance.aoi(
+        surface_tilt=site.surface_tilt_deg,
+        surface_azimuth=site.surface_azimuth_deg,
+        solar_zenith=solpos["apparent_zenith"],
+        solar_azimuth=solpos["azimuth"],
+    )
+    a_r = 0.16 if module.iam_b0 <= 0.055 else min(0.30, 0.12 + 0.8 * module.iam_b0)
+    iam_beam = np.where(aoi < 90.0, pvlib.iam.martin_ruiz(aoi.clip(0.0, 90.0), a_r=a_r), 0.0)
+    iam_diff = float(pvlib.iam.martin_ruiz(60.0, a_r=a_r))
+    iam_eff = np.where(solpos["apparent_zenith"] < 87.0, 0.85 * iam_beam + 0.15 * iam_diff, iam_diff)
+
+    poa_clean = np.maximum(0.0, np.nan_to_num(poa_global, nan=0.0))
+    eff_irrad = poa_clean * iam_eff * (1.0 - site.soiling_loss_frac)
+
+    t_cell = compute_cell_temperature(
+        poa_global=pd.Series(poa_clean, index=times),
+        temp_air=pd.Series(temp_air, index=times),
+        wind_speed=pd.Series(wind_speed, index=times),
+        wind_direction=pd.Series(wind_direction, index=times),
+        site=site,
+    ).to_numpy(dtype=float)
+
+    _, _, dc_after_kw, ac_unclip_kw, ac_net_kw, _, _, inv_max_total_kw = _evaluate_dc_ac_stage(
+        eff_irrad=eff_irrad,
+        t_cell=t_cell,
+        site=site,
+        module=module,
+        inverter=inverter,
+        dc_aging_factor=dc_aging_factor,
+        inverter_count_override=inverter_count_override,
+    )
+    return {
+        "ac_net_kw": ac_net_kw,
+        "ac_unclipped_kw": ac_unclip_kw,
+        "dc_after_losses_kw": dc_after_kw,
+        "temp_cell_c": t_cell,
+        "inv_max_total_kw": float(inv_max_total_kw),
+    }

@@ -1,0 +1,27 @@
+PVObject_=pvModule
+  Version=1.0
+  Comment=Public Reference Datasheet Hyundai HiS-M310TI (310W Mono-Si for NREL PVDAQ #2107)
+  Manufacturer=Hyundai
+  Model=HiS-M310TI
+  Technol=mtSiMono
+  NCelS=72
+  NCelP=1
+  Width=0.991
+  Height=1.956
+  PNom=310.0
+  Vmp=37.20
+  Imp=8.33
+  Voc=45.60
+  Isc=8.94
+  muISC=3.8
+  muVocSpec=-136.8
+  muPmpReq=-0.40
+  Gamma=1.05
+  muGamma=0.0002
+  RSerie=0.31
+  RShunt=450.0
+  Rp_0=1500.0
+  Rp_Exp=5.5
+  BifacialityFactor=0.00
+  IAM_b0=0.05
+End of PVObject pvModule

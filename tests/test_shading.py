@@ -55,6 +55,8 @@ def test_interrow_shed_shading_and_horizon_mask() -> None:
     horizon = [15.0] * 36
     h_interp = compute_horizon_elevation(np.array([45.0, 185.0]), horizon)
     assert np.allclose(h_interp, 15.0)
+    res_flat = compute_near_shading(el, az, 35.0, 180.0, 1.2, 10.0, 2.0, 0.25, [])
     res_h = compute_near_shading(el, az, 35.0, 180.0, 1.2, 10.0, 2.0, 0.25, [], horizon_elev_deg_36=horizon)
     assert res_h.beam_shaded_fraction[0] == 1.0
     assert res_h.horizon_beam_loss_pct > 0.0
+    assert res_h.diffuse_svf < res_flat.diffuse_svf

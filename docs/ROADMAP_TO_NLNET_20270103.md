@@ -6,28 +6,24 @@
 
 ---
 
-## Brutal Gap Audit Baseline (`2026-11-23` v0.1.0)
-| Criterion (7-Point Scale) | Weight | v0.1 Score | Why Not 6+ Yet (Exact Technical Gaps) | Target Score by `2027-01-03` |
-| :--- | :---: | :---: | :--- | :---: |
-| **Technical Merit** | 30% | **4.6 / 7** | Strong 8,760-hr PV+ESS+3D shading core, but still uses lumped analytical water-coupling instead of validated **OpenFOAM** CFD lookup tables, lacks **Copernicus DEM GeoTIFF** horizon auto-loading, and has zero real-plant SCADA/open measured telemetry calibration yet. | **5.9 / 7** |
-| **Strategic Relevance (`Restack`)** | 40% | **4.9 / 7** | Cleanly replaces `PVsyst`+`HOMER`+`HelioScope` with 0% GenAI and uses `PVGIS`+`RO-Crate`, but repo is still local-only (not public on GitHub/`PyPI`, `0` external users/contributors, and no explicit EU `NREN`/energy-coop adoption proof). | **6.1 / 7** |
-| **Value for Money** | 30% | **5.0 / 7** | Strong v0.1 PoW already built in advance; zero equipment capex keeps budget compliant, but M1–M4 milestone work-hours and EU open-standards deliverables need sharper line-item justification. | **5.8 / 7** |
-| **Weighted Total** | **100%** | **4.84 / 7** | **Right below `5.0` pass bar today (~20–25% odds if submitted raw today)** -> closes ALL 5 gaps in Weeks 1–5 below! | **5.95 / 7 (~50%+ realistic tier)** |
+## Brutal Gap Audit Progression (`v0.1.0` -> `v0.2.0` Verified Offline)
+| Criterion (7-Point Scale) | Weight | v0.1.0 | v0.2.0 Now | Remaining Gap to `6.0+` by `2027-01-03` | Target |
+| :--- | :---: | :---: | :---: | :--- | :---: |
+| **Technical Merit** | 30% | `4.6 / 7` | **`5.5 / 7`** | Copernicus DEM (Innsbruck/Bolzano/Zermatt `MAE 1.25–1.57°`), US DOE PVDAQ #2107 892.8 kWp real telemetry (`R²=0.9101`, `MBE=+3.81%`), & `pvlib ModelChain` (`<0.7%` delta) DONE. Still missing reproducible **OpenFOAM** CFD thermal table & a 2nd European metered plant check. | **6.0 / 7** |
+| **Strategic Relevance (`Restack`)** | 40% | `4.9 / 7` | **`5.2 / 7`** | Zero-vendor Copernicus+OEDI+PVGIS parity strengthens anti-lock-in case, **but repo is still unpublished (0 public GitHub stars, 0 PyPI downloads, 0 EU energy-coop/tester feedback yet)**. | **6.1 / 7** |
+| **Value for Money** | 30% | `5.0 / 7` | **`5.5 / 7`** | Working verified engine + real telemetry benchmark already shipped upfront with zero grant funds; just needs crisp M1–M4 work-hour breakdown against `€42,000`. | **5.9 / 7** |
+| **Weighted Total** | **100%** | `4.84 / 7` | **`5.38 / 7`** | Clears `5.0` passing bar (`~35–42%` realistic selection odds once made public; `0%` while local-only) -> Phase 3 unlocks **`55–60%+` tier**! | **6.01 / 7** |
 
 ---
 
-## 41-Day Weekly Sprint Plan (`2026-11-24` -> `2027-01-03`)
+## Remaining Sprint Plan to `2027-01-03`
 
-1. **Week 1 (`11/24 – 11/30`) — Public Release & Open Data Telemetry Benchmark:**
-   - Publish `HelioStack` v0.1.0 to public GitHub (`ttthkim-hue/heliostack`) + GitHub Pages live simulator (`https://ttthkim-hue.github.io/heliostack/`) + `PyPI` `0.1.x`.
-   - Benchmark against at least **2 real measured open PV datasets** (e.g., NREL PVDAQ public sites / Zenodo open plant telemetry) beyond synthetic TMY.
-2. **Week 2 (`12/01 – 12/08`) — Copernicus DEM Horizon + Real PVsyst Sample Parity (`v0.2.0`):**
-   - Implement automatic **Copernicus GLO-30 DEM / PVGIS horizon** elevation ingestion (`--dem` / automatic API horizon fetch) for genuine terrain shading.
-   - Add automated 1:1 loss-waterfall parity comparison table against documented reference cases.
-3. **Week 3 (`12/09 – 12/16`) — Reproducible OpenFOAM Convective & Floating-PV Thermal Case (`v0.2.5`):**
-   - Package a minimal deterministic **`OpenFOAM` (`buoyantSimpleFoam` / `chtMultiRegionSimpleFoam`) 2D/3D parametric sweep** over wind speed, row spacing (`GCR`), and water cooling boundary conditions -> derive verified open surrogate thermal curves usable on CPU in `< 1 ms`.
-4. **Week 4 (`12/17 – 12/24`) — European Open-Energy Community Feedback & Issue Polish:**
-   - Share live demo & benchmarks cleanly on **OpenMod**, **pvlib/GitHub Discussions**, and **Fosstodon**; collect external feedback/stars/testers (`Social Proof`) and resolve reported edge cases.
-5. **Week 5 (`12/25 – 2027-01-02`) — Human-Written Proposal & Pre-Deadline Submission:**
-   - Author 100% human-written plain-English **NLnet Restack + NREN** proposal (strictly 0% LLM translation/drafting) referencing live GitHub release, PyPI downloads, external tester quotes, and Copernicus/OpenFOAM verification.
+1. **Completed Ahead of Schedule (`v0.2.0`):** Copernicus 30m DEM & ESRI `.asc` horizon ray-casting + diffuse SVF, US DOE / NREL PVDAQ #2107 (`892.8 kWp`, 2024 `3,255` daylight operating hrs) field meter validation, and canonical `pvlib ModelChain` + 12-step PVsyst loss-tree parity.
+2. **Phase 3A — Reproducible OpenFOAM Convective & Floating-PV Thermal Case (`v0.2.5`):**
+   - Package a minimal deterministic **`OpenFOAM` (`buoyantSimpleFoam` / `chtMultiRegionSimpleFoam`) 2D/3D parametric sweep** over wind speed, row spacing (`GCR`), and water cooling boundary conditions -> derive verified open surrogate thermal curves usable on CPU in `< 1 ms`, plus add a European/2nd metered plant check if available.
+3. **Phase 3B — Public GitHub / PyPI Release & European Tester Feedback (`v0.3.0`):**
+   - Publish `ttthkim-hue/heliostack` cleanly with zero secrets (`gitleaks`), GitHub Pages live workbench, and `PyPI` package.
+   - Share live demo & benchmarks cleanly on **OpenMod**, **pvlib/GitHub Discussions**, and **Fosstodon**; gather real external tester feedback (`Social Proof`).
+4. **Phase 3C — 100% Human-Written Proposal & Pre-Deadline Submission (`12/25 – 2027-01-02`):**
+   - Author 100% human-written plain-English **NLnet Restack + NREN** proposal referencing live GitHub release, PyPI downloads, external tester quotes, PVDAQ validation, and Copernicus/OpenFOAM verification.
    - Submit **24 hours before `2027-01-03 20:00 KST` (`12:00 CET`)** deadline!

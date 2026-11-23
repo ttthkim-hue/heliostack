@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>HelioStack v0.1.0 — Open-Source Solar PV, 3D Shading &amp; LiFePO4 ESS Simulator</title>
+  <title>HelioStack v0.2.0 — Open-Source Solar PV, Terrain, Field &amp; ESS Simulator</title>
   <style>
     :root {
       --bg: #f8fafc;
@@ -57,9 +57,10 @@
   <div class="container">
     <header class="hero">
       <div class="badges">
-        <span class="badge">HelioStack v0.1.0 (MIT)</span>
+        <span class="badge">HelioStack v0.2.0 (MIT)</span>
         <span class="badge">0% Generative AI at Runtime</span>
-        <span class="badge gray">EU PVGIS v5.3 Validated</span>
+        <span class="badge gray">EU PVGIS v5.3 &amp; Copernicus DEM</span>
+        <span class="badge gray">NREL PVDAQ #2107 Validated</span>
         <span class="badge gray">RO-Crate 1.1 + SHA-256</span>
       </div>
       <h1>HelioStack — Open-Source Solar PV, 3D Shading &amp; ESS Workbench</h1>
@@ -153,6 +154,44 @@
         Notice full physics honesty: Floating PV delivers -3.59 to -5.77 &deg;C daytime cooling (+1.53% to +2.30% pure thermal gain),
         while dark water albedo (0.08 vs land 0.20) trades off rear-side bifacial bounce—yielding +0.38% net gain in hot Seville and -0.22% to -0.68% in cooler climates.
       </p>
+    </section>
+
+    <section class="panel" style="margin-top:1.25rem;">
+      <h2>Phase 2 Validation (`v0.2.0`): Copernicus DEM Terrain, US DOE Field Meter &amp; ModelChain Parity</h2>
+      <div class="viz-grid">
+        <div class="subcard">
+          <h3>Pillar A: Zermatt Alpine Horizon Profile (Copernicus DEM vs EU PVGIS)</h3>
+          <svg id="svg-horizon" viewBox="0 0 360 175" width="100%" aria-label="Zermatt horizon profile"></svg>
+          <p class="note">
+            Innsbruck (-2.13% vs PVcalc -1.53%), Bolzano (-4.88% vs -4.86%), Zermatt (-15.72% vs -13.99%). MAE 1.25&ndash;1.57 deg across Alpine valleys.
+          </p>
+        </div>
+        <div class="subcard">
+          <h3>Pillar B: Real 892.8 kWp Plant (PVDAQ #2107, Jan&ndash;Nov 2024)</h3>
+          <svg id="svg-pvdaq" viewBox="0 0 360 175" width="100%" aria-label="PVDAQ 2107 monthly validation"></svg>
+          <p class="note">
+            3,255 valid operating hours: Measured <strong>1,221.3 MWh</strong> vs Modeled <strong>1,267.8 MWh</strong> (MBE +3.81%, nRMSE 6.79%, R&sup2; 0.9101).
+          </p>
+        </div>
+      </div>
+
+      <h3 style="margin:0.8rem 0 0.45rem;font-size:0.95rem;">Pillar C: Canonical pvlib ModelChain Parity &amp; 12-Step PVsyst Loss Tree (99.0 kWp)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Site</th>
+            <th>pvlib ModelChain</th>
+            <th>HelioStack v0.2</th>
+            <th>Delta</th>
+            <th>Perez Gain</th>
+            <th>IAM Loss</th>
+            <th>Thermal Loss</th>
+            <th>Inverter (.OND)</th>
+            <th>P90 Yield</th>
+          </tr>
+        </thead>
+        <tbody id="p2-body"></tbody>
+      </table>
     </section>
   </div>
 
@@ -300,6 +339,53 @@
       document.getElementById(id).addEventListener("input", update)
     );
     update();
+
+    (function renderPhase2() {
+      const zCop = [21.37,10.96,4.8,6.32,10.2,13.11,17.33,19.37,19.7,19.55,22.82,24.79,24.95,24.13,22.18,19.52,18.47,18.01,16.06,14.26,11.49,11.82,9.63,11.87,14.83,20.56,24.1,27.01,25.1,19.22,26.18,33.1,32.57,30.7,28.0,24.4];
+      const zPvg = [20.6,13.63,6.5,7.6,11.6,14.4,18.0,19.37,20.63,21.8,25.07,25.87,25.6,26.5,25.7,21.4,19.5,18.7,16.8,15.0,12.73,12.2,12.07,13.87,14.1,20.5,24.3,27.5,28.37,24.03,20.6,27.77,31.57,30.9,28.13,23.8];
+      const toPts = arr => arr.map((v, i) => `${(32 + i * 9.1).toFixed(1)},${(148 - (v / 36) * 124).toFixed(1)}`).join(" ");
+      document.getElementById("svg-horizon").innerHTML = `
+        <line x1="30" y1="148" x2="352" y2="148" stroke="#cbd5e1" />
+        <text x="6" y="151" font-size="9.5" fill="#64748b">0°</text>
+        <text x="6" y="28" font-size="9.5" fill="#64748b">36°</text>
+        <polyline fill="none" stroke="#0f766e" stroke-width="2.2" points="${toPts(zCop)}" />
+        <polyline fill="none" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4 3" points="${toPts(zPvg)}" />
+        <text x="32" y="165" font-size="9.5" fill="#475569">0° N</text>
+        <text x="191" y="165" font-size="9.5" text-anchor="middle" fill="#475569">180° S (MAE 1.57°)</text>
+        <text x="350" y="165" font-size="9.5" text-anchor="end" fill="#475569">350°</text>
+      `;
+
+      const lbl = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov*"];
+      const meas = [55.79,79.84,116.61,138.48,164.09,148.62,149.44,134.63,123.05,108.45,2.32];
+      const mod  = [62.22,80.42,113.26,135.69,160.02,152.41,153.74,148.81,140.80,118.21,2.23];
+      const bars = lbl.map((m, i) => {
+        const x = 32 + i * 29.5;
+        const h1 = (meas[i] / 175) * 124;
+        const h2 = (mod[i] / 175) * 124;
+        return `<rect x="${x}" y="${148 - h1}" width="11" height="${h1}" rx="2" fill="#0f766e" />` +
+               `<rect x="${x + 12}" y="${148 - h2}" width="11" height="${h2}" rx="2" fill="#d97706" opacity="0.85" />` +
+               `<text x="${x + 11.5}" y="165" font-size="9" text-anchor="middle" fill="#475569">${m}</text>`;
+      }).join("");
+      document.getElementById("svg-pvdaq").innerHTML = `<line x1="28" y1="148" x2="355" y2="148" stroke="#cbd5e1" /><text x="3" y="28" font-size="9" fill="#64748b">175</text>${bars}`;
+
+      const p2Rows = [
+        { s: "Amsterdam, NL", mc: "1113.3", hs: "1105.9", d: "-0.67%", perez: "+19.66%", iam: "-3.03%", th: "-0.45%", inv: "-1.66%", p90: "1043.5 kWh/kWp" },
+        { s: "Seville, ES", mc: "1846.4", hs: "1852.1", d: "+0.31%", perez: "+16.12%", iam: "-2.52%", th: "-5.20%", inv: "-1.35%", p90: "1747.7 kWh/kWp" }
+      ];
+      document.getElementById("p2-body").innerHTML = p2Rows.map(r => `
+        <tr>
+          <td><strong>${r.s}</strong></td>
+          <td>${r.mc} kWh/kWp</td>
+          <td>${r.hs} kWh/kWp</td>
+          <td><strong>${r.d}</strong></td>
+          <td>${r.perez}</td>
+          <td>${r.iam}</td>
+          <td>${r.th}</td>
+          <td>${r.inv}</td>
+          <td>${r.p90}</td>
+        </tr>
+      `).join("");
+    })();
   </script>
 </body>
 </html>

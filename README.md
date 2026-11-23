@@ -1,21 +1,25 @@
-# HelioStack v0.1.0
+# HelioStack v0.2.0
 
-**Deterministic open-source solar PV, 3D ray-cast shading, CFD-informed land/Floating-PV thermal, and HiGHS `LiFePO4` ESS optimization workbench with `RO-Crate 1.1` & `SHA-256` audit provenance.**
+**Deterministic open-source solar PV, 3D ray-cast & Copernicus DEM terrain shading, convective/Floating-PV thermal, and HiGHS `LiFePO4` ESS optimization workbench with `RO-Crate 1.1` & `SHA-256` audit provenance.**
 
 - **License:** MIT (`100%` OSI-permissive open source; `0%` generative AI or closed vendor APIs at runtime)
-- **Live Data Provenance:** Cross-validated against European Commission **PVGIS v5.3** (`SARAH3` & `ERA5`) hourly TMY and official `PVcalc` reference yields
+- **Live Data & Field Validation:**
+  1. European Commission **PVGIS v5.3** (`SARAH3` & `ERA5`) hourly TMY & `PVcalc` cross-validation across 4 baseline climates
+  2. **Copernicus DEM** 36-azimuth ray-cast terrain horizon vs EU PVGIS `printhorizon` across Innsbruck, Bolzano, and Zermatt (`MAE 1.25–1.57°`)
+  3. Real **892.8 kWp** revenue meter telemetry (**US DOE / NREL PVDAQ #2107**, 2024 `3,255` daylight operating hours, `R² = 0.9101`, `MBE = +3.81%`, `nRMSE = 6.79%`)
+  4. Canonical **`pvlib ModelChain`** parity check (`-0.67%` Amsterdam, `+0.31%` Seville) + 12-step PVsyst-style loss tree
 - **AI Transparency:** [`AI_DISCLOSURE.md`](./AI_DISCLOSURE.md)
-- **41-Day NLnet Plan:** [`docs/ROADMAP_TO_NLNET_20270103.md`](./docs/ROADMAP_TO_NLNET_20270103.md)
+- **Road to NLnet (`2027-01-03`):** [`docs/ROADMAP_TO_NLNET_20270103.md`](./docs/ROADMAP_TO_NLNET_20270103.md)
 
 ---
 
 ## Why HelioStack?
 
-Commercial Windows-only tools (`PVsyst`, `PV*SOL`, `HOMER Pro`) and closed cloud SaaS (`HelioScope`) lock solar engineering workflows behind proprietary `.PAN`/`.OND` binary/desktop silos, while open libraries (`pvlib`) lack unified 3D obstacle ray-casting, Floating-PV water thermal physics, sparse 8,760-hour ESS curtailment optimization, and cryptographic reproducibility bundles.
+Commercial Windows-only tools (`PVsyst`, `PV*SOL`, `HOMER Pro`) and closed cloud SaaS (`HelioScope`) lock solar engineering workflows behind proprietary `.PAN`/`.OND` binary/desktop silos, while open libraries (`pvlib`) lack unified Copernicus DEM terrain + 3D obstacle ray-casting, Floating-PV water thermal physics, sparse 8,760-hour ESS curtailment optimization, and cryptographic reproducibility bundles.
 
 `HelioStack` bridges that gap in pure open Python:
 1. **Clean-Room Equipment Validation (`.PAN` / `.OND` / JSON):** Enforces physical single-diode & MPPT window invariants (`Vmp < Voc`, `Imp < Isc`, finite metrics, inverter efficiency bounds).
-2. **Vectorized 3D Ray-Box Shading & Diffuse SVF:** Evaluates 3D obstacle shading, 36-azimuth horizon profiles, inter-row shed geometry, and cosine-weighted hemispherical sky-view factors.
+2. **Vectorized 3D Ray-Box, Copernicus DEM & Diffuse SVF:** Evaluates 3D obstacle shading, Copernicus 30m satellite & ASCII ESRI `.asc` DEM 36-azimuth mountain horizon blocking, inter-row shed geometry, and cosine-weighted hemispherical sky-view factors.
 3. **Thermal Physics Beyond Single U-Values:** Compares open-rack Faiman baselines against wind-angle convective alleys and lagged water-coupled Floating-PV cooling (`-3.59 °C` to `-5.77 °C` daytime cooling).
 4. **8,760-Hour Sparse HiGHS `LiFePO4` Dispatch LP:** Quantifies curtailment recovery under grid export caps with ESS container HVAC auxiliary loads and strict `10^-6 kW` hourly conservation checks.
 5. **Reproducible Audit Packaging:** Outputs byte-deterministic `RO-Crate 1.1` (`ro-crate-metadata.json`), `repro-manifest.json` (`SHA-256`), and zero-CDN `bankable_report.html`.
@@ -33,6 +37,26 @@ Commercial Windows-only tools (`PVsyst`, `PV*SOL`, `HOMER Pro`) and closed cloud
 
 ---
 
+## Phase 2 Validation Highlights (`v0.2.0`)
+
+### 1. Alpine Terrain Shading (Horizon-Free TMY + Sky-Dome SVF)
+| Alpine Valley | Elevation | Copernicus vs PVGIS MAE | Flat -> Copernicus Loss | EU PVcalc Terrain Loss | Copernicus vs PVGIS-Hor Delta |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Innsbruck, AT** | `580 m` | `1.28°` | `1537.4 -> 1504.7` (`-2.13%`) | `-1.53%` | `+0.46%` |
+| **Bolzano, IT** | `271 m` | `1.25°` | `1624.5 -> 1545.3` (`-4.88%`) | `-4.86%` | `+2.28%` |
+| **Zermatt, CH** | `1,610 m` | `1.57°` | `1645.8 -> 1387.2` (`-15.72%`) | `-13.99%` | `+1.98%` |
+
+### 2. Real Utility Meter Telemetry (`US DOE / NREL PVDAQ #2107`, Arbuckle, CA — 2024 Jan–early Nov)
+- Plant: `892.8 kWp DC` (`2,880 × 310 W`), `24 × 27.6 kW` (`662.4 kW AC`), 7-year aging factor `0.965`, `3,255` daylight operating hours.
+- **Convective Land Model:** Measured `1,221.32 MWh` vs Modeled `1,267.82 MWh` | **`MBE = +3.81%`**, **`nRMSE = 6.79%`**, **`R² = 0.9101`**.
+- **Open-Rack Faiman Baseline:** Measured `1,221.32 MWh` vs Modeled `1,268.83 MWh` | `MBE = +3.89%`, `nRMSE = 6.80%`, `R² = 0.9098`.
+
+### 3. Canonical `pvlib ModelChain` Parity (`99.0 kWp` Mono Plant)
+- **Amsterdam, NL:** `pvlib = 1,113.34` vs `HelioStack = 1,105.87 kWh/kWp` (**`-0.67%`**)
+- **Seville, ES:** `pvlib = 1,846.44` vs `HelioStack = 1,852.10 kWh/kWp` (**`+0.31%`**)
+
+---
+
 ## Quick Start
 
 ```bash
@@ -42,9 +66,13 @@ pip install -e ".[dev]"
 heliostack validate fixtures/equipment/ref_550w_bifacial.pan
 heliostack validate fixtures/equipment/invalid_module.pan
 
-# 2. Run full 8,760-hr benchmark across cached/live EU PVGIS sites
-python benchmarks/run_europe_benchmark.py
+# 2. Extract 36-azimuth Copernicus DEM terrain horizon vs EU PVGIS printhorizon
+heliostack horizon --lat 47.2692 --lon 11.4041 --cache-dir fixtures/weather
 
-# 3. Preview offline interactive Web UI locally
+# 3. Run full Phase 1 + Phase 2 reproducible benchmarks
+python benchmarks/run_europe_benchmark.py
+python benchmarks/run_phase2_validation.py
+
+# 4. Preview offline interactive Web UI locally
 heliostack serve --dir docs --port 8780
 ```

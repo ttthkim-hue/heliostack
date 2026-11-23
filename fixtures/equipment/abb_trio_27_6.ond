@@ -1,0 +1,16 @@
+PVObject_=pvGInverter
+  Version=1.0
+  Comment=Public Reference Datasheet ABB TRIO-27.6-TL-OUTD (27.6kW String Inverter for NREL PVDAQ #2107)
+  Manufacturer=ABB
+  Model=TRIO-27.6-TL-OUTD
+  PNomConv=27.6
+  PMaxOUT=27.6
+  VMppMin=500.0
+  VMPPMax=800.0
+  VAbsMax=1000.0
+  EfficMax=98.2
+  EfficEuro=98.0
+  PSeuil=0.15
+  Night_Loss=0.02
+  TPNomEff=5:96.2,10:97.5,20:98.1,30:98.2,50:98.2,75:98.0,100:97.7
+End of PVObject pvGInverter

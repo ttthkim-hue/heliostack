@@ -64,7 +64,8 @@ def test_cli_validate_exit_codes() -> None:
 
     records, code = validate_equipment_path(FIXTURES)
     assert code == 1
-    assert len(records) == 4
+    assert len(records) == 6
+    assert sum(1 for r in records if r["passed"]) == 4
 
 
 def test_inverter_default_curve_warning_and_bad_curve_rejection() -> None:

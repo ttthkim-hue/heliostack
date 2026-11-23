@@ -170,16 +170,25 @@ def compute_near_shading(
     # Standard collector sky view baseline (1 + cos(beta)) / 2 discounted by inter-row view obstruction & 3D boxes
     row_sky_factor = max(0.35, 1.0 - 0.18 * max(0.0, gcr - 0.30) * math.sin(tilt_rad))
     svf_base = 0.5 * (1.0 + math.cos(tilt_rad)) * row_sky_factor
-    if obstacles:
+    if obstacles or horizon_elev_deg_36 is not None:
         above_plane = cos_inc > 1e-4
         blocked_sky = np.zeros(len(hemi_dirs), dtype=float)
         if np.any(above_plane):
             dirs_sky = hemi_dirs[above_plane]
-            hit_sky = np.zeros((len(dirs_sky), len(pts)), dtype=bool)
-            for box in obstacles:
-                bmin, bmax = box.bounds()
-                hit_sky |= _ray_box_hits(pts, dirs_sky, bmin, bmax)
-            blocked_sky[above_plane] = hit_sky.mean(axis=1)
+            blocked_frac = np.zeros(len(dirs_sky), dtype=float)
+            if horizon_elev_deg_36 is not None:
+                hemi_az = np.degrees(np.arctan2(dirs_sky[:, 0], dirs_sky[:, 1])) % 360.0
+                hemi_el = np.degrees(np.arcsin(np.clip(dirs_sky[:, 2], 0.0, 1.0)))
+                hor_blocked = hemi_el < compute_horizon_elevation(hemi_az, horizon_elev_deg_36)
+                blocked_frac = np.where(hor_blocked, 1.0, blocked_frac)
+            if obstacles:
+                hit_sky = np.zeros((len(dirs_sky), len(pts)), dtype=bool)
+                for box in obstacles:
+                    bmin, bmax = box.bounds()
+                    hit_sky |= _ray_box_hits(pts, dirs_sky, bmin, bmax)
+                obs_frac = hit_sky.mean(axis=1)
+                blocked_frac = 1.0 - (1.0 - blocked_frac) * (1.0 - obs_frac)
+            blocked_sky[above_plane] = blocked_frac
         weights = cos_inc / max(1e-9, float(np.sum(cos_inc)))
         obstacle_sky_pass = float(np.sum(weights * (1.0 - blocked_sky)))
     else:
