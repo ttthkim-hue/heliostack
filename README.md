@@ -5,9 +5,10 @@
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-0f766e.svg)](./LICENSE)
 [![Live Browser Demo](https://img.shields.io/badge/Demo-Interactive_Workbench-0f766e)](https://ttthkim-hue.github.io/heliostack/)
 [![Zero Runtime AI](https://img.shields.io/badge/Runtime_GenAI-0%25_Deterministic_CPU-d97706)](./AI_DISCLOSURE.md)
+[![ORCID](https://img.shields.io/badge/ORCID-0009--0003--5047--7501-a6ce39?logo=orcid&logoColor=white)](https://orcid.org/0009-0003-5047-7501)
 
-**Replacing black-box commercial PV silos (`PVsyst`, `PV*SOL`, `HOMER Pro`, `HelioScope`) with a reproducible `AGPL-3.0-or-later` Python + OpenFOAM workbench built for graduate researchers and open energy labs.**  
-Clean-room `.PAN`/`.OND` checks · Copernicus DEM alpine horizon · OpenFOAM 14 CFD cooling · Dual-continent field telemetry · 8,760-hr HiGHS `LiFePO4` dispatch · `RO-Crate 1.1` provenance.
+**Freeing solar PV + battery storage engineering from closed commercial silos (`PVsyst`, `PV*SOL`, `HOMER Pro`, `HelioScope`) with an `AGPL-3.0-or-later` Python, OpenFOAM & open-standards workbench—built to empower individuals, citizen energy communities, small installers, graduate researchers, and open energy labs.**  
+Clean-room `.PAN`/`.OND` checks · Copernicus DEM alpine horizon · OpenFOAM 14 CFD cooling · Dual-continent field telemetry · 8,760-hr HiGHS `LiFePO4` dispatch · `RO-Crate 1.1` provenance · Zero-install browser execution.
 
 ```bash
 pip install heliostack
@@ -30,16 +31,21 @@ pip install heliostack
 
 ---
 
-## Why HelioStack?
+## Why HelioStack? Open Internet Stack & Citizen Energy Democratization
 
-Commercial Windows-only tools (`PVsyst`, `PV*SOL`, `HOMER Pro`) and closed cloud SaaS (`HelioScope`) lock solar engineering workflows behind proprietary `.PAN`/`.OND` binary/desktop silos, while open libraries (`pvlib`) lack unified Copernicus DEM terrain + 3D obstacle ray-casting, Floating-PV water thermal physics, sparse 8,760-hour ESS curtailment optimization, and cryptographic reproducibility bundles.
+The clean-energy transition does not scale through utilities and national governments alone—it accelerates when **individuals, households, citizen energy cooperatives, local installers, and independent labs** can simulate, audit, and size distributed solar PV + storage infrastructure on their own terms.
 
-`HelioStack` bridges that gap in pure open Python:
-1. **Clean-Room Equipment Validation (`.PAN` / `.OND` / JSON):** Enforces physical single-diode & MPPT window invariants (`Vmp < Voc`, `Imp < Isc`, finite metrics, inverter efficiency bounds).
-2. **Vectorized 3D Ray-Box, Copernicus DEM & Diffuse SVF:** Evaluates 3D obstacle shading, Copernicus 30m satellite & ASCII ESRI `.asc` DEM 36-azimuth mountain horizon blocking, inter-row shed geometry, and cosine-weighted hemispherical sky-view factors.
-3. **Thermal Physics Beyond Single U-Values:** Compares open-rack Faiman baselines against wind-angle convective alleys and lagged water-coupled Floating-PV cooling (`-3.59 °C` to `-5.77 °C` daytime cooling).
-4. **8,760-Hour Sparse HiGHS `LiFePO4` Dispatch LP:** Quantifies curtailment recovery under grid export caps with ESS container HVAC auxiliary loads and strict `10^-6 kW` hourly conservation checks.
-5. **Reproducible Audit Packaging:** Outputs byte-deterministic `RO-Crate 1.1` (`ro-crate-metadata.json`), `repro-manifest.json` (`SHA-256`), and zero-CDN `bankable_report.html`.
+Today, that capability is gated behind Windows-only proprietary binaries (`PVsyst`, `PV*SOL`, `HOMER Pro`) and closed cloud SaaS (`HelioScope`) that lock equipment definitions inside vendor silos and keep site data on third-party servers, while open libraries (`pvlib`) leave a steep gap between low-level irradiance math and end-to-end site shading, CFD thermal balances, `LiFePO4` curtailment recovery, and bankable audit bundles.
+
+`HelioStack` brings **Open Internet Stack** principles—open protocols, local data sovereignty, zero-install web accessibility, and anti-enclosure licensing—to distributed solar engineering:
+
+1. **Democratizing Bankable Simulation Beyond Large Enterprises:** Citizens, community microgrids, and small installers get the same `.PAN`/`.OND` invariant checks, Copernicus DEM mountain-horizon shading, thermal physics, and sparse 8,760-hour `LiFePO4` dispatch LP used by large engineering firms—free of per-seat licenses or proprietary cloud lock-in.
+2. **Local Data Sovereignty & Zero-Install Browser Path:** `HelioStack` runs **100% deterministically on CPU** (`0%` generative AI at runtime). Its [offline interactive browser workbench](https://ttthkim-hue.github.io/heliostack/) already executes client-side with zero backend telemetry, and the `v1.0` roadmap expands this into a full client-side **WebAssembly / WebGL** CAD & household/community sizing tool.
+3. **Clean-Room Equipment Validation (`.PAN` / `.OND` / JSON):** Enforces physical single-diode & MPPT window invariants (`Vmp < Voc`, `Imp < Isc`, finite metrics, inverter efficiency bounds) over open schemas.
+4. **Vectorized 3D Ray-Box, Copernicus DEM & Diffuse SVF:** Evaluates 3D obstacle shading, Copernicus 30m satellite & ASCII ESRI `.asc` DEM 36-azimuth mountain horizon blocking, inter-row shed geometry, and cosine-weighted hemispherical sky-view factors.
+5. **Thermal Physics Beyond Single U-Values:** Compares open-rack Faiman baselines against wind-angle convective alleys and lagged water-coupled Floating-PV cooling (`-3.59 °C` to `-5.77 °C` daytime cooling), calibrated via reproducible OpenFOAM 14 runs.
+6. **8,760-Hour Sparse HiGHS `LiFePO4` Dispatch LP:** Quantifies curtailment recovery under grid export caps with ESS container HVAC auxiliary loads and strict `10^-6 kW` hourly conservation checks.
+7. **Verifiable Open Provenance (`RO-Crate 1.1` + `SHA-256`):** Outputs byte-deterministic `RO-Crate 1.1` (`ro-crate-metadata.json`), `repro-manifest.json` (`SHA-256`), and zero-CDN `bankable_report.html` so any citizen cooperative, lender, or peer reviewer can verify every input and number offline.
 
 ---
 
@@ -100,7 +106,7 @@ Commercial Windows-only tools (`PVsyst`, `PV*SOL`, `HOMER Pro`) and closed cloud
 | Existing Open Tool | Primary Focus | What Remains Unsolved End-to-End |
 | :--- | :--- | :--- |
 | **`pvlib-python`** (used inside HelioStack) | Low-level solar position, transposition & single-diode math | Unified `.PAN`/`.OND` validation + 3D shading + Copernicus horizon + CFD thermal + HiGHS ESS + `RO-Crate 1.1` audit |
-| **`NREL / SAM`** | Desktop GUI simulator for US policies & buildings | Lightweight Python/CLI microservice, Copernicus EU horizon, OpenFOAM FPV cooling, reproducible cryptographic bundles |
+| **`NREL / SAM`** | Desktop GUI simulator for US policies & buildings | Lightweight Python/CLI microservice, browser WASM/WebGL path, Copernicus EU horizon, OpenFOAM FPV cooling, cryptographic bundles |
 | **`open-pv / simshady`** | Browser JavaScript 3D shadow casting | Bankable 8,760-hr energy loss tree, single-diode electrical yield & ESS optimization |
 | **`PyPSA` / `oemof`** | Macro grid / national transmission LP optimization | Site-level PVsyst-grade `.PAN`/`.OND` single-diode modeling, 3D/DEM shade & micro-thermal physics |
 | **`Bifacial_Radiance`** | Radiance backward ray-tracing optics | Fast CPU engineering workbench integrating thermal CFD, ESS curtailment LP & `RO-Crate 1.1` provenance |
@@ -140,9 +146,25 @@ heliostack serve --dir docs --port 8780
 
 ---
 
+## Author & Verified Open-Science Track Record
+
+`HelioStack` is created and maintained by **Tae-Hyung Kim** ([ORCID `0009-0003-5047-7501`](https://orcid.org/0009-0003-5047-7501) · [GitHub `@ttthkim-hue`](https://github.com/ttthkim-hue) · M.S. Materials Engineering, Pusan National University `2025`; B.S. Materials Engineering, University of Ulsan `2020`).
+
+- **Companion Open-Source CFD & Reproducibility Software:**
+  - [`taichi_lbm_ref_gyroid`](https://github.com/ttthkim-hue/taichi_lbm_ref_gyroid) — GPU-accelerated (`Taichi`) D3Q19 MRT Lattice Boltzmann Method (MRT-LBM) porous-media CFD solver with Bayesian Optimization (`50`-point Pareto front, Forchheimer regression, OpenSCAD/STL/STEP CAD exchange).
+  - [`openfair-mat`](https://github.com/ttthkim-hue/openfair-mat) — `MIT`-licensed pure Python standard-library physical-integrity, schema, and `RO-Crate 1.1` + `SHA-256` reproducibility validator (`openfair-check`) for open scientific datasets (Zenodo, NOMAD FAIRmat, Materials Project).
+- **Peer-Reviewed Research Record:** `14` peer-reviewed journal articles indexed on [ORCID `0009-0003-5047-7501`](https://orcid.org/0009-0003-5047-7501) (`7` sole first-author, `1` co-first author, `6` co-author), plus `1` 2022 Crossref/OpenAlex-verified co-authored article (`15` total), including:
+  - **First Author (2026):** *Self-powered triboelectric electrospun air filters as functional fibrous materials: Experiment-supported modeling of dielectrophoretic capture and scale-up*, *Materials Today Communications* 56, 115941 — [`10.1016/j.mtcomm.2026.115941`](https://doi.org/10.1016/j.mtcomm.2026.115941)
+  - **Co-author (2026):** *Current Status and Applications of Organic Rankine Cycles in the Global Cement Industry*, *Resources Recycling* 35(2), 30–41 — [`10.7844/kirr.2026.35.2.30`](https://doi.org/10.7844/kirr.2026.35.2.30)
+  - **Co-First Author (2026):** *Characteristics of calcium silicate cement: Effects of CO2 curing and CaCO3 micro-filler addition*, *Journal of the Ceramic Society of Japan* 134(6), 398–404 — [`10.2109/jcersj2.25126`](https://doi.org/10.2109/jcersj2.25126)
+  - **First Author (2025):** *Rheology control of CO2 curable ceramic powder for binder jetting*, *Advanced Powder Technology* 36(1), 104729 — [`10.1016/j.apt.2024.104729`](https://doi.org/10.1016/j.apt.2024.104729)
+  - **First Author (2024):** *Influence of CaCO3 on Density and Compressive Strength of Calcium Aluminate Cement-Based Cementitious Materials in Binder Jetting*, *Materials* 17(14), 3463 — [`10.3390/ma17143463`](https://doi.org/10.3390/ma17143463)
+
+---
+
 ## License & Academic Openness (`AGPL-3.0-or-later`)
 
 `HelioStack` is 100% open source under the **GNU Affero General Public License v3.0 or later ([`LICENSE`](./LICENSE))**:
-- **Permanent Free Use for Graduate Students, Researchers & Open Science:** Run simulations, couple OpenFOAM CFD cases, audit `.PAN`/`.OND` inputs, and host open academic web tools freely with full source inspection and reproducibility.
-- **Anti-Enclosure Guarantee:** Hosted SaaS or commercial forks exposing modified solvers over a network must contribute their modifications back under `AGPL-3.0-or-later`, preventing closed proprietary enclosure of public research engineering.
+- **Permanent Free Use for Citizens, Graduate Students, Researchers & Open Energy Communities:** Run simulations, couple OpenFOAM CFD cases, audit `.PAN`/`.OND` inputs, and host open community/academic web tools freely with full source inspection and reproducibility.
+- **Anti-Enclosure Guarantee:** Hosted SaaS or commercial forks exposing modified solvers over a network must contribute their modifications back under `AGPL-3.0-or-later`, preventing closed proprietary enclosure of public energy engineering infrastructure.
 - **Optional Commercial Dual-Licensing:** Proprietary commercial integrators seeking closed-source embedding without AGPL-3.0 reciprocity may contact the copyright holder separately for commercial dual-licensing or custom enterprise engineering agreements.
