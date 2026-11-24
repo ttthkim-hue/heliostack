@@ -10,6 +10,7 @@ on:
 jobs:
   openfoam14-smoke:
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v4
@@ -29,15 +30,23 @@ jobs:
 
       - name: Install OpenFOAM 14 and NumPy
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends ca-certificates curl gnupg python3-numpy
+          export DEBIAN_FRONTEND=noninteractive
+          APT_OPTS=(-o Acquire::Retries=5 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30)
+          if [ -f /etc/apt/apt-mirrors.txt ] && grep -q 'ec2\.archive\.ubuntu\.com' /etc/apt/apt-mirrors.txt; then
+            printf 'http://archive.ubuntu.com/ubuntu/\nhttps://mirrors.edge.kernel.org/ubuntu/\n' | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+          fi
+          if [ -f /etc/apt/sources.list.d/ubuntu.sources ]; then
+            sudo sed -i 's|http://[a-z0-9-]*\.ec2\.archive\.ubuntu\.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' /etc/apt/sources.list.d/ubuntu.sources
+          fi
+          sudo DEBIAN_FRONTEND=noninteractive apt-get "${APT_OPTS[@]}" update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "${APT_OPTS[@]}" ca-certificates curl gnupg python3-numpy
           curl -fsSL https://dl.openfoam.org/gpg.key -o /tmp/openfoam.key
           sudo mkdir -p /usr/share/keyrings
           sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/openfoam.gpg /tmp/openfoam.key
           rm -f /tmp/openfoam.key
           echo "deb [signed-by=/usr/share/keyrings/openfoam.gpg] http://dl.openfoam.org/ubuntu noble main" | sudo tee /etc/apt/sources.list.d/openfoam.list >/dev/null
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends openfoam14
+          sudo DEBIAN_FRONTEND=noninteractive apt-get "${APT_OPTS[@]}" update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "${APT_OPTS[@]}" openfoam14
 
       - name: Run OpenFOAM 14 smoke simulation and verify receipt
         run: |
