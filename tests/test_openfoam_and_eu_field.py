@@ -146,11 +146,15 @@ def test_openfoam_cli_help_and_generate_case_only(tmp_path: Path) -> None:
     assert "solver          fluid;" in control_dict
     assert "endTime         800;" in control_dict
     assert "writeInterval   200;" in control_dict
+    assert not re.search(r"^\s*functions\b", control_dict, re.MULTILINE)
     for fn_name in ("wallHeatFlux1", "panelTopFlux", "panelBottomFlux"):
-        assert fn_name in control_dict
+        assert fn_name not in control_dict
 
     functions_dict = (case_dir / "system" / "functions").read_text(encoding="utf-8")
     assert "object      functions;" in functions_dict
+    assert not re.search(r"^\s*functions\s*\{", functions_dict, re.MULTILINE)
+    for fn_name in ("wallHeatFlux1", "panelTopFlux", "panelBottomFlux"):
+        assert fn_name in functions_dict
 
     u_text = (case_dir / "0" / "U").read_text(encoding="utf-8")
     t_text = (case_dir / "0" / "T").read_text(encoding="utf-8")

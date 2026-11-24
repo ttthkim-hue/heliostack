@@ -29,7 +29,7 @@ WSL_CASE_BASE = "/tmp/heliostack_of14_run"
 FULL_END_TIME = 800
 FULL_WRITE_INTERVAL = 200
 SMOKE_END_TIME = 80
-SMOKE_WRITE_INTERVAL = 80
+SMOKE_WRITE_INTERVAL = 40
 
 BLOCK_NX = (18, 40, 34)
 BLOCK_NY = (28, 3, 36)
@@ -278,48 +278,43 @@ writeCompression off;
 timeFormat      general;
 timePrecision   6;
 runTimeModifiable true;
-
-functions
-{{
-    wallHeatFlux1
-    {{
-        type            wallHeatFlux;
-        libs            ("libfieldFunctionObjects.so");
-        executeControl  writeTime;
-        writeControl    writeTime;
-        patches         (panelTop panelBottom ground);
-    }}
-    panelTopFlux
-    {{
-        type            surfaceFieldValue;
-        libs            ("libfieldFunctionObjects.so");
-        log             yes;
-        writeFields     no;
-        patch           panelTop;
-        operation       areaAverage;
-        fields          (wallHeatFlux);
-        executeControl  writeTime;
-        writeControl    writeTime;
-    }}
-    panelBottomFlux
-    {{
-        type            surfaceFieldValue;
-        libs            ("libfieldFunctionObjects.so");
-        log             yes;
-        writeFields     no;
-        patch           panelBottom;
-        operation       areaAverage;
-        fields          (wallHeatFlux);
-        executeControl  writeTime;
-        writeControl    writeTime;
-    }}
-}}
 """
-    files["system/functions"] = _hdr("dictionary", "system", "functions") + (
-        "// Active runtime function objects (wallHeatFlux1, panelTopFlux, panelBottomFlux)\n"
-        "// are embedded in system/controlDict for single-file OpenFOAM 14 compatibility;\n"
-        "// this dictionary intentionally stays empty to prevent duplicate execution.\n"
-    )
+    files["system/functions"] = _hdr("dictionary", "system", "functions") + """
+wallHeatFlux1
+{
+    type            wallHeatFlux;
+    libs            ("libfieldFunctionObjects.so");
+    executeControl  writeTime;
+    writeControl    writeTime;
+    patches         (panelTop panelBottom ground);
+}
+
+panelTopFlux
+{
+    type            surfaceFieldValue;
+    libs            ("libfieldFunctionObjects.so");
+    log             yes;
+    writeFields     no;
+    patch           panelTop;
+    operation       areaAverage;
+    fields          (wallHeatFlux);
+    executeControl  writeTime;
+    writeControl    writeTime;
+}
+
+panelBottomFlux
+{
+    type            surfaceFieldValue;
+    libs            ("libfieldFunctionObjects.so");
+    log             yes;
+    writeFields     no;
+    patch           panelBottom;
+    operation       areaAverage;
+    fields          (wallHeatFlux);
+    executeControl  writeTime;
+    writeControl    writeTime;
+}
+"""
     files["system/fvSchemes"] = _hdr("dictionary", "system", "fvSchemes") + """
 ddtSchemes { default steadyState; }
 gradSchemes { default Gauss linear; }
@@ -636,8 +631,15 @@ def _run_single_case(
         "(nice -n 19 blockMesh > log.blockMesh 2>&1 && "
         "nice -n 19 checkMesh -constant > log.checkMesh 2>&1 && "
         "nice -n 19 foamRun -solver fluid > log.foamRun 2>&1 || "
-        "{ tail -n 40 log.blockMesh log.checkMesh log.foamRun 2>/dev/null >&2; exit 1; }) && "
+        "{ tail -n 60 log.blockMesh log.checkMesh log.foamRun 2>/dev/null >&2; exit 1; }) && "
         "grep -E 'cells:|Mesh OK' log.checkMesh && "
+        "{ top_ok=0; for p in postProcessing/panelTopFlux/*/surfaceFieldValue.dat; do "
+        "test -s \"$p\" && top_ok=1; done; "
+        "bot_ok=0; for p in postProcessing/panelBottomFlux/*/surfaceFieldValue.dat; do "
+        "test -s \"$p\" && bot_ok=1; done; "
+        "if [ \"$top_ok\" -ne 1 ] || [ \"$bot_ok\" -ne 1 ]; then "
+        "echo 'Missing non-empty postProcessing surfaceFieldValue.dat' >&2; "
+        "tail -n 60 log.foamRun >&2 || true; exit 1; fi; } && "
         "echo '---TOP---' && cat postProcessing/panelTopFlux/*/surfaceFieldValue.dat | tail -n 12 && "
         "echo '---BOT---' && cat postProcessing/panelBottomFlux/*/surfaceFieldValue.dat | tail -n 12 && "
         "echo '---TAIL---' && tail -n 12 log.foamRun && "
