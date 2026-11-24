@@ -1,7 +1,8 @@
 """Reproducible OpenFOAM 14 2D Tilted PV Module Convective Cooling Sweep.
 
-Runs strictly single-core (`nice -n 19`, zero MPI, zero GPU) inside WSL2 `Ubuntu-24.04`
-against `/opt/openfoam14` (`foamRun -solver fluid`, steady `kOmegaSST`, `heRhoThermo`)
+Runs strictly single-core (`nice -n 19`, zero MPI, zero GPU) either inside WSL2
+`Ubuntu-24.04` or natively on Linux/container/CI (`--native`) against
+`/opt/openfoam14` (`foamRun -solver fluid`, steady `kOmegaSST`, `heRhoThermo`)
 around a 28-deg tilted 2.0 m PV module over sunlit land vs cool reservoir water.
 """
 
@@ -11,7 +12,10 @@ import argparse
 import hashlib
 import json
 import math
+import re
+import shlex
 import subprocess
+import tempfile
 import time
 from pathlib import Path
 from typing import Any
@@ -21,6 +25,20 @@ import numpy as np
 ROOT = Path(__file__).resolve().parent.parent
 OUT_JSON = ROOT / "fixtures" / "thermal" / "openfoam14_pv_thermal_surrogate.json"
 WSL_CASE_BASE = "/tmp/heliostack_of14_run"
+
+FULL_END_TIME = 800
+FULL_WRITE_INTERVAL = 200
+SMOKE_END_TIME = 80
+SMOKE_WRITE_INTERVAL = 80
+
+BLOCK_NX = (18, 40, 34)
+BLOCK_NY = (28, 3, 36)
+EXPECTED_BLOCKMESH_CELLS = sum(
+    BLOCK_NX[ix] * BLOCK_NY[iy]
+    for iy in range(3)
+    for ix in range(3)
+    if not (ix == 1 and iy == 1)
+)
 
 TILT_DEG = 28.0
 PANEL_CHORD_M = 2.0
@@ -91,8 +109,8 @@ def _block_mesh_dict(h_clear_m: float) -> str:
     def vid(ix: int, iy: int, iz: int) -> int:
         return iz * 16 + iy * 4 + ix
 
-    nx_list = [18, 40, 34]
-    ny_list = [28, 3, 36]
+    nx_list = list(BLOCK_NX)
+    ny_list = list(BLOCK_NY)
     gx_list = [0.35, 1.0, 4.0]
     gy_strs = [
         "((0.5 0.5 2.5) (0.5 0.5 0.4))",
@@ -220,7 +238,14 @@ boundary
 """
 
 
-def _case_files(u_in: float, t_ground_k: float, h_clear_m: float) -> dict[str, str]:
+def _case_files(
+    u_in: float,
+    t_ground_k: float,
+    h_clear_m: float,
+    *,
+    end_time: int = FULL_END_TIME,
+    write_interval: int = FULL_WRITE_INTERVAL,
+) -> dict[str, str]:
     # Outdoor atmospheric boundary layer turbulence intensity I = 10%, scale L_t = 0.30 m
     k_in = max(5e-4, 1.5 * (0.10 * u_in) ** 2)
     omega_in = max(0.15, math.sqrt(k_in) / ((0.09 ** 0.25) * 0.30))
@@ -237,15 +262,15 @@ def _case_files(u_in: float, t_ground_k: float, h_clear_m: float) -> dict[str, s
 
     files: dict[str, str] = {}
     files["system/blockMeshDict"] = _block_mesh_dict(h_clear_m)
-    files["system/controlDict"] = _hdr("dictionary", "system", "controlDict") + """
+    files["system/controlDict"] = _hdr("dictionary", "system", "controlDict") + f"""
 solver          fluid;
 startFrom       startTime;
 startTime       0;
 stopAt          endTime;
-endTime         800;
+endTime         {end_time};
 deltaT          1;
 writeControl    timeStep;
-writeInterval   200;
+writeInterval   {write_interval};
 purgeWrite      2;
 writeFormat     ascii;
 writePrecision  6;
@@ -255,17 +280,17 @@ timePrecision   6;
 runTimeModifiable true;
 
 functions
-{
+{{
     wallHeatFlux1
-    {
+    {{
         type            wallHeatFlux;
         libs            ("libfieldFunctionObjects.so");
         executeControl  writeTime;
         writeControl    writeTime;
         patches         (panelTop panelBottom ground);
-    }
+    }}
     panelTopFlux
-    {
+    {{
         type            surfaceFieldValue;
         libs            ("libfieldFunctionObjects.so");
         log             yes;
@@ -275,9 +300,9 @@ functions
         fields          (wallHeatFlux);
         executeControl  writeTime;
         writeControl    writeTime;
-    }
+    }}
     panelBottomFlux
-    {
+    {{
         type            surfaceFieldValue;
         libs            ("libfieldFunctionObjects.so");
         log             yes;
@@ -287,9 +312,14 @@ functions
         fields          (wallHeatFlux);
         executeControl  writeTime;
         writeControl    writeTime;
-    }
-}
+    }}
+}}
 """
+    files["system/functions"] = _hdr("dictionary", "system", "functions") + (
+        "// Active runtime function objects (wallHeatFlux1, panelTopFlux, panelBottomFlux)\n"
+        "// are embedded in system/controlDict for single-file OpenFOAM 14 compatibility;\n"
+        "// this dictionary intentionally stays empty to prevent duplicate execution.\n"
+    )
     files["system/fvSchemes"] = _hdr("dictionary", "system", "fvSchemes") + """
 ddtSchemes { default steadyState; }
 gradSchemes { default Gauss linear; }
@@ -498,18 +528,58 @@ boundaryField
     return files
 
 
-def _wsl_run(cmd: str) -> str:
+def write_case_tree(target_dir: Path, files: dict[str, str]) -> list[Path]:
+    """Write an OpenFOAM 14 case dictionary tree to target_dir with LF line endings."""
+    written: list[Path] = []
+    for rel_path, content in sorted(files.items()):
+        dest = target_dir / Path(rel_path)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_bytes(content.encode("utf-8"))
+        written.append(dest)
+    return written
+
+
+def _shell_argv(cmd: str, *, native: bool) -> list[str]:
+    if native:
+        return ["bash", "-lc", cmd]
+    return ["wsl", "-d", "Ubuntu-24.04", "--", "bash", "-lc", cmd]
+
+
+def _run_cmd(cmd: str, *, native: bool = False, stdin_text: str | None = None) -> str:
     proc = subprocess.run(
-        ["wsl", "-d", "Ubuntu-24.04", "--", "bash", "-lc", cmd],
+        _shell_argv(cmd, native=native),
+        input=stdin_text,
         capture_output=True,
         text=True,
         check=False,
     )
     if proc.returncode != 0:
+        mode = "Native" if native else "WSL"
         raise RuntimeError(
-            f"WSL OpenFOAM command failed (exit {proc.returncode}):\n{proc.stdout[-1500:]}\n{proc.stderr[-1500:]}"
+            f"{mode} OpenFOAM command failed (exit {proc.returncode}):\n"
+            f"{proc.stdout[-1500:]}\n{proc.stderr[-1500:]}"
         )
     return proc.stdout
+
+
+def _wsl_run(cmd: str) -> str:
+    return _run_cmd(cmd, native=False)
+
+
+def _cleanup_case_base(case_base: str, *, native: bool) -> None:
+    subprocess.run(
+        _shell_argv(f"rm -rf {shlex.quote(case_base)}", native=native),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def _parse_checkmesh_cells(output: str) -> int:
+    match = re.search(r"\bcells:\s+(\d+)", output)
+    if match is None:
+        raise RuntimeError(f"Could not parse cell count from checkMesh output:\n{output}")
+    return int(match.group(1))
 
 
 def _parse_latest_surface_flux(dat_text: str) -> tuple[float, float]:
@@ -526,44 +596,60 @@ def _parse_latest_surface_flux(dat_text: str) -> tuple[float, float]:
     return rows[-1]
 
 
-def _run_single_case(surface: str, u_in: float, t_ground_k: float, h_clear_m: float) -> dict[str, Any]:
-    case_dir = f"{WSL_CASE_BASE}/{surface}_u{u_in:.0f}"
-    files = _case_files(u_in, t_ground_k, h_clear_m)
-    payload_b64 = json.dumps(files)
+def _run_single_case(
+    surface: str,
+    u_in: float,
+    t_ground_k: float,
+    h_clear_m: float,
+    *,
+    native: bool = False,
+    end_time: int = FULL_END_TIME,
+    write_interval: int = FULL_WRITE_INTERVAL,
+    case_base: str = WSL_CASE_BASE,
+) -> dict[str, Any]:
+    case_dir = f"{case_base.rstrip('/')}/{surface}_u{u_in:.0f}"
+    files = _case_files(
+        u_in,
+        t_ground_k,
+        h_clear_m,
+        end_time=end_time,
+        write_interval=write_interval,
+    )
+    payload_json = json.dumps(files)
 
     py_write = (
         "import json, pathlib, sys; "
-        f"root = pathlib.Path('{case_dir}'); "
+        f"root = pathlib.Path({case_dir!r}); "
         "data = json.loads(sys.stdin.read()); "
-        "[((root / k).parent.mkdir(parents=True, exist_ok=True), (root / k).write_text(v)) for k, v in data.items()]"
+        "[((root / k).parent.mkdir(parents=True, exist_ok=True), "
+        "(root / k).write_bytes(v.encode('utf-8'))) for k, v in data.items()]"
     )
-    proc_prep = subprocess.run(
-        ["wsl", "-d", "Ubuntu-24.04", "--", "bash", "-lc", f"rm -rf {case_dir} && python3 -c \"{py_write}\""],
-        input=payload_b64,
-        capture_output=True,
-        text=True,
-        check=False,
+    _run_cmd(
+        f"rm -rf {shlex.quote(case_dir)} && python3 -c {shlex.quote(py_write)}",
+        native=native,
+        stdin_text=payload_json,
     )
-    if proc_prep.returncode != 0:
-        raise RuntimeError(f"Failed creating case {case_dir}: {proc_prep.stderr}")
 
     t0 = time.perf_counter()
-    out = _wsl_run(
-        f"source /opt/openfoam14/etc/bashrc && cd {case_dir} && "
-        "nice -n 19 blockMesh > log.blockMesh 2>&1 && "
+    of_cmd = (
+        f"source /opt/openfoam14/etc/bashrc && cd {shlex.quote(case_dir)} && "
+        "(nice -n 19 blockMesh > log.blockMesh 2>&1 && "
         "nice -n 19 checkMesh -constant > log.checkMesh 2>&1 && "
-        "nice -n 19 foamRun -solver fluid > log.foamRun 2>&1 && "
+        "nice -n 19 foamRun -solver fluid > log.foamRun 2>&1 || "
+        "{ tail -n 40 log.blockMesh log.checkMesh log.foamRun 2>/dev/null >&2; exit 1; }) && "
         "grep -E 'cells:|Mesh OK' log.checkMesh && "
         "echo '---TOP---' && cat postProcessing/panelTopFlux/*/surfaceFieldValue.dat | tail -n 12 && "
         "echo '---BOT---' && cat postProcessing/panelBottomFlux/*/surfaceFieldValue.dat | tail -n 12 && "
         "echo '---TAIL---' && tail -n 12 log.foamRun && "
         "echo '---HASH---' && sha256sum log.foamRun"
     )
+    out = _run_cmd(of_cmd, native=native)
     elapsed_s = round(time.perf_counter() - t0, 2)
 
     if "Mesh OK" not in out:
         raise RuntimeError(f"checkMesh did not report Mesh OK for {surface} u={u_in}:\n{out}")
 
+    cells = _parse_checkmesh_cells(out)
     top_part = out.split("---TOP---")[1].split("---BOT---")[0]
     bot_part = out.split("---BOT---")[1].split("---TAIL---")[0]
     hash_part = out.split("---HASH---")[1].strip().split()[0]
@@ -577,11 +663,24 @@ def _run_single_case(surface: str, u_in: float, t_ground_k: float, h_clear_m: fl
     h_conv_total = h_conv_top + h_conv_bot
     h_rad_eff = _radiative_effective_h(t_ground_k)
 
+    for metric_name, metric_val in (
+        ("q_panel_top_w_m2", q_top),
+        ("q_panel_bottom_w_m2", q_bot),
+        ("h_conv_total_w_m2k", h_conv_total),
+        ("h_rad_eff_w_m2k", h_rad_eff),
+    ):
+        if not math.isfinite(metric_val):
+            raise RuntimeError(f"Non-finite {metric_name} for {surface} u={u_in}: {metric_val}")
+    if h_conv_total <= 0.0:
+        raise RuntimeError(f"Expected positive h_conv_total_w_m2k for {surface} u={u_in}, got {h_conv_total}")
+
     return {
         "surface": surface,
         "wind_speed_ms": u_in,
         "clearance_m": h_clear_m,
         "t_ground_k": t_ground_k,
+        "cells": cells,
+        "mesh_ok": True,
         "final_step": int(step_top),
         "q_panel_top_w_m2": round(q_top, 3),
         "q_panel_bottom_w_m2": round(q_bot, 3),
@@ -630,15 +729,105 @@ def main() -> None:
         action="store_true",
         help="Recompute surrogate fits from already-cached converged OpenFOAM 14 cases JSON",
     )
+    parser.add_argument(
+        "--native",
+        action="store_true",
+        help="Execute commands natively via bash -lc (Linux/container/CI) instead of wsl -d Ubuntu-24.04",
+    )
+    parser.add_argument(
+        "--smoke",
+        action="store_true",
+        help="Run a single fast representative case (land_rack, U=2.0 m/s, 80 iterations) without modifying the surrogate JSON",
+    )
+    parser.add_argument(
+        "--out",
+        type=Path,
+        default=None,
+        help="Output JSON path (smoke receipt path when --smoke is set; surrogate JSON path otherwise)",
+    )
+    parser.add_argument(
+        "--generate-case-only",
+        type=Path,
+        default=None,
+        metavar="DIR",
+        help="Write the deterministic OpenFOAM 14 case dictionary tree to DIR without invoking OpenFOAM binaries",
+    )
     args = parser.parse_args()
+
+    mode_count = sum(
+        [
+            bool(args.recompute_from_cache),
+            bool(args.smoke),
+            args.generate_case_only is not None,
+        ]
+    )
+    if mode_count > 1:
+        parser.error("--recompute-from-cache, --smoke, and --generate-case-only are mutually exclusive")
+
+    if args.generate_case_only is not None:
+        files = _case_files(
+            2.0,
+            T_GROUND_LAND_K,
+            0.85,
+            end_time=FULL_END_TIME,
+            write_interval=FULL_WRITE_INTERVAL,
+        )
+        written = write_case_tree(args.generate_case_only, files)
+        print(f"Generated OpenFOAM 14 case tree ({len(written)} files) at {args.generate_case_only}")
+        return
+
+    if args.smoke:
+        default_smoke_out = Path(tempfile.gettempdir()) / "openfoam_smoke_receipt.json"
+        smoke_out = args.out if args.out is not None else default_smoke_out
+        if smoke_out.resolve() == OUT_JSON.resolve():
+            parser.error(
+                f"--smoke must not overwrite cached surrogate {OUT_JSON}; provide a separate --out path"
+            )
+        try:
+            row = _run_single_case(
+                "land_rack",
+                2.0,
+                T_GROUND_LAND_K,
+                0.85,
+                native=args.native,
+                end_time=SMOKE_END_TIME,
+                write_interval=SMOKE_WRITE_INTERVAL,
+            )
+        finally:
+            _cleanup_case_base(WSL_CASE_BASE, native=args.native)
+
+        if row["cells"] != EXPECTED_BLOCKMESH_CELLS:
+            raise RuntimeError(
+                f"Expected {EXPECTED_BLOCKMESH_CELLS} blockMesh cells, got {row['cells']}"
+            )
+        smoke_payload = {
+            "mode": "smoke",
+            "solver": "OpenFOAM 14 (foamRun -solver fluid, steady kOmegaSST, heRhoThermo ideal gas air, 28-deg tilted PV)",
+            "native": bool(args.native),
+            "end_time": SMOKE_END_TIME,
+            "domain_m": {"x": [-4.0, 10.0], "y": [0.0, Y_TOP_M], "tilt_deg": TILT_DEG, "chord_m": PANEL_CHORD_M},
+            **row,
+        }
+        smoke_out.parent.mkdir(parents=True, exist_ok=True)
+        smoke_raw = json.dumps(smoke_payload, indent=2) + "\n"
+        smoke_out.write_bytes(smoke_raw.encode("utf-8"))
+        smoke_sha = hashlib.sha256(smoke_raw.encode("utf-8")).hexdigest()[:16]
+        print(
+            f"[OpenFOAM14 smoke] cells={row['cells']} q_top={row['q_panel_top_w_m2']} "
+            f"q_bot={row['q_panel_bottom_w_m2']} h_conv={row['h_conv_total_w_m2k']} W/m2K "
+            f"-> {smoke_out} (sha256={smoke_sha}...)"
+        )
+        return
 
     t_all = time.perf_counter()
     h_nat = _natural_convection_h_2side()
     results_by_surface: dict[str, Any] = {}
+    out_path = args.out if args.out is not None else OUT_JSON
 
     if args.recompute_from_cache:
         cached = json.loads(OUT_JSON.read_text(encoding="utf-8"))
         prev_wall_s = float(cached.get("total_wall_s", 0.0))
+        cell_count = int(cached.get("cells", 5910))
         for surface, t_ground, h_clear in (
             ("land_rack", T_GROUND_LAND_K, 0.85),
             ("floating_pv", T_WATER_FPV_K, 0.25),
@@ -647,6 +836,7 @@ def main() -> None:
             results_by_surface[surface] = _fit_surface_surrogate(t_ground, h_clear, cases, h_nat)
         wall_s = prev_wall_s
     else:
+        cell_count = EXPECTED_BLOCKMESH_CELLS
         try:
             for surface, t_ground, h_clear in (
                 ("land_rack", T_GROUND_LAND_K, 0.85),
@@ -654,26 +844,24 @@ def main() -> None:
             ):
                 cases = []
                 for v in WIND_SPEEDS_MS:
-                    row = _run_single_case(surface, v, t_ground, h_clear)
+                    row = _run_single_case(surface, v, t_ground, h_clear, native=args.native)
+                    cell_count = int(row["cells"])
                     cases.append(row)
                     print(
                         f"[OpenFOAM14 28deg {surface} U={v:.1f}m/s] step={row['final_step']} "
-                        f"q_top={row['q_panel_top_w_m2']} q_bot={row['q_panel_bottom_w_m2']} "
+                        f"cells={row['cells']} q_top={row['q_panel_top_w_m2']} "
+                        f"q_bot={row['q_panel_bottom_w_m2']} "
                         f"h_conv={row['h_conv_total_w_m2k']} + h_rad={row['h_rad_eff_w_m2k']} W/m2K ({row['elapsed_s']}s)"
                     )
                 results_by_surface[surface] = _fit_surface_surrogate(t_ground, h_clear, cases, h_nat)
         finally:
-            subprocess.run(
-                ["wsl", "-d", "Ubuntu-24.04", "--", "bash", "-lc", f"rm -rf {WSL_CASE_BASE}"],
-                capture_output=True,
-                check=False,
-            )
+            _cleanup_case_base(WSL_CASE_BASE, native=args.native)
         wall_s = round(time.perf_counter() - t_all, 2)
 
     payload = {
         "solver": "OpenFOAM 14 (foamRun -solver fluid, steady kOmegaSST, heRhoThermo ideal gas air, 28-deg tilted PV)",
         "domain_m": {"x": [-4.0, 10.0], "y": [0.0, Y_TOP_M], "tilt_deg": TILT_DEG, "chord_m": PANEL_CHORD_M},
-        "cells": 5910,
+        "cells": cell_count,
         "t_amb_c": round(T_AMB_K - 273.15, 2),
         "t_sky_c": round(T_SKY_K - 273.15, 2),
         "t_panel_c": round(T_PANEL_K - 273.15, 2),
@@ -682,11 +870,11 @@ def main() -> None:
         "total_wall_s": wall_s,
         "surfaces": results_by_surface,
     }
-    OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     raw = json.dumps(payload, indent=2) + "\n"
-    OUT_JSON.write_text(raw, encoding="utf-8")
+    out_path.write_bytes(raw.encode("utf-8"))
     sha = hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
-    print(f"Saved OpenFOAM 14 28-deg surrogate table to {OUT_JSON} (sha256={sha}...) in {wall_s}s")
+    print(f"Saved OpenFOAM 14 28-deg surrogate table to {out_path} (sha256={sha}...) in {wall_s}s")
 
 
 if __name__ == "__main__":

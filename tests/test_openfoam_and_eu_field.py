@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import math
+import re
+import subprocess
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -14,6 +18,8 @@ from heliostack.thermal import compute_cell_temperature, load_openfoam_surrogate
 
 ROOT = Path(__file__).resolve().parent.parent
 CYPRUS_CSV = ROOT / "fixtures" / "telemetry" / "eu_cyprus_pcoe_2015_2016_hourly.csv"
+OPENFOAM_SWEEP_SCRIPT = ROOT / "openfoam" / "run_openfoam_pv_sweep.py"
+SURROGATE_JSON = ROOT / "fixtures" / "thermal" / "openfoam14_pv_thermal_surrogate.json"
 
 
 def test_openfoam14_surrogate_physics_and_fpv_cooling(tmp_path: Path) -> None:
@@ -69,3 +75,100 @@ def test_eu_cyprus_pcoe_thermal_and_power_validation(tmp_path: Path) -> None:
     assert cfd["dc_power"]["r2"] > 0.90
     assert abs(cfd["dc_power"]["mbe_pct"]) < 8.0
     assert cfd["ac_power"]["r2"] > 0.90
+
+
+def test_openfoam_cli_help_and_generate_case_only(tmp_path: Path) -> None:
+    help_proc = subprocess.run(
+        [sys.executable, str(OPENFOAM_SWEEP_SCRIPT), "--help"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert help_proc.returncode == 0
+    for flag in ("--recompute-from-cache", "--native", "--smoke", "--out", "--generate-case-only"):
+        assert flag in help_proc.stdout
+
+    case_dir = tmp_path / "of14_case"
+    gen_proc = subprocess.run(
+        [sys.executable, str(OPENFOAM_SWEEP_SCRIPT), "--generate-case-only", str(case_dir)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert gen_proc.returncode == 0, gen_proc.stderr
+
+    expected_files = (
+        "0/U",
+        "0/T",
+        "0/p_rgh",
+        "0/p",
+        "0/k",
+        "0/omega",
+        "0/nut",
+        "0/alphat",
+        "constant/g",
+        "constant/pRef",
+        "constant/momentumTransport",
+        "constant/physicalProperties",
+        "system/blockMeshDict",
+        "system/controlDict",
+        "system/fvSchemes",
+        "system/fvSolution",
+        "system/functions",
+    )
+    for rel_path in expected_files:
+        file_path = case_dir / rel_path
+        assert file_path.is_file(), f"Missing generated OpenFOAM file: {rel_path}"
+
+    block_mesh = (case_dir / "system" / "blockMeshDict").read_text(encoding="utf-8")
+    for patch in ("inlet", "outlet", "top", "ground", "panelTop", "panelBottom", "panelEdges"):
+        assert patch in block_mesh
+
+    verts = [
+        tuple(float(v) for v in m.groups())
+        for m in re.finditer(r"^\s+\(([-\d.]+)\s+([-\d.]+)\s+([-\d.]+)\)$", block_mesh, re.MULTILINE)
+    ]
+    assert len(verts) == 32
+    assert all(math.isfinite(coord) for pt in verts for coord in pt)
+    assert min(pt[0] for pt in verts) == pytest.approx(-4.0)
+    assert max(pt[0] for pt in verts) == pytest.approx(10.0)
+    assert min(pt[1] for pt in verts) == pytest.approx(0.0)
+    assert max(pt[1] for pt in verts) == pytest.approx(5.5)
+
+    blocks = [
+        tuple(int(c) for c in m.groups())
+        for m in re.finditer(r"hex\s+\([^)]+\)\s+\((\d+)\s+(\d+)\s+(\d+)\)", block_mesh)
+    ]
+    assert len(blocks) == 8
+    assert sum(nx * ny * nz for nx, ny, nz in blocks) == 6044
+
+    control_dict = (case_dir / "system" / "controlDict").read_text(encoding="utf-8")
+    assert "solver          fluid;" in control_dict
+    assert "endTime         800;" in control_dict
+    assert "writeInterval   200;" in control_dict
+    for fn_name in ("wallHeatFlux1", "panelTopFlux", "panelBottomFlux"):
+        assert fn_name in control_dict
+
+    functions_dict = (case_dir / "system" / "functions").read_text(encoding="utf-8")
+    assert "object      functions;" in functions_dict
+
+    u_text = (case_dir / "0" / "U").read_text(encoding="utf-8")
+    t_text = (case_dir / "0" / "T").read_text(encoding="utf-8")
+    k_text = (case_dir / "0" / "k").read_text(encoding="utf-8")
+    omega_text = (case_dir / "0" / "omega").read_text(encoding="utf-8")
+    assert "uniform (2.000 0 0)" in u_text
+    assert "uniform 298.15" in t_text and "uniform 308.15" in t_text and "uniform 323.15" in t_text
+    k_match = re.search(r"internalField\s+uniform\s+([0-9.eE+-]+);", k_text)
+    omega_match = re.search(r"internalField\s+uniform\s+([0-9.eE+-]+);", omega_text)
+    assert k_match is not None and math.isfinite(float(k_match.group(1))) and float(k_match.group(1)) > 0.0
+    assert omega_match is not None and math.isfinite(float(omega_match.group(1))) and float(omega_match.group(1)) > 0.0
+
+    # Guard: --smoke must refuse overwriting cached surrogate JSON
+    guard_proc = subprocess.run(
+        [sys.executable, str(OPENFOAM_SWEEP_SCRIPT), "--smoke", "--out", str(SURROGATE_JSON)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert guard_proc.returncode != 0
+

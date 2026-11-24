@@ -1,0 +1,31 @@
+{
+  "title": "HelioStack: Open-Source Solar PV, 3D Shading, OpenFOAM CFD & LiFePO4 ESS Optimization Workbench",
+  "version": "0.3.1",
+  "upload_type": "software",
+  "license": "AGPL-3.0-or-later",
+  "creators": [
+    {
+      "name": "Kim, Tae-Hyung",
+      "orcid": "0009-0003-5047-7501"
+    }
+  ],
+  "keywords": [
+    "solar-pv",
+    "photovoltaics",
+    "openfoam",
+    "cfd",
+    "copernicus-dem",
+    "pvlib",
+    "energy-storage",
+    "ro-crate",
+    "agplv3"
+  ],
+  "description": "<p><strong>HelioStack</strong> (<code>pip install heliostack</code>, <code>AGPL-3.0-or-later</code>) is a deterministic open-source solar PV, 3D ray-cast shading, OpenFOAM CFD thermal, and HiGHS LiFePO4 energy-storage optimization workbench with <code>0%</code> generative AI at runtime and byte-deterministic <code>RO-Crate 1.1</code> + <code>SHA-256</code> audit provenance.</p><ul><li><strong>OpenFOAM 14 28&deg; Tilted PV Thermal Sweep:</strong> Reproducible steady RANS (<code>foamRun -solver fluid</code>, <code>kOmegaSST</code>, <code>5,910</code> cells, 8 cases) comparing land open-rack vs. pontoon Floating-PV cooling and convective heat transfer.</li><li><strong>Copernicus DEM &amp; pvlib ModelChain Parity:</strong> 36-azimuth ray-cast alpine horizon extraction (Innsbruck, Bolzano, Zermatt; MAE 1.25&ndash;1.57&deg; vs. EU PVGIS <code>printhorizon</code>) and canonical <code>pvlib ModelChain</code> parity (&minus;0.67% Amsterdam, +0.31% Seville).</li><li><strong>Dual-Continent Field Validation:</strong> University of Cyprus PHAETHON CoE 1-year outdoor testbed (8,784 hours, <code>Tmod</code> RMSE 2.18 &deg;C, DC R&sup2; = 0.9887) and US DOE/NREL PVDAQ #2107 892.8 kWp utility telemetry (3,255 daylight hours, R&sup2; = 0.9101, MBE = +3.81%, nRMSE = 6.79%).</li><li><strong>Offline Browser Workbench:</strong> Zero-telemetry interactive simulator covering 100 kWp research/commercial baselines, 0.8 kWp citizen balcony solar (<em>Balkonkraftwerk</em>), and 6 kWp rooftop/community microgrids at <a href=\"https://ttthkim-hue.github.io/heliostack/\">https://ttthkim-hue.github.io/heliostack/</a>.</li></ul>",
+  "related_identifiers": [
+    {
+      "scheme": "url",
+      "identifier": "https://github.com/ttthkim-hue/heliostack",
+      "relation": "isSupplementTo"
+    }
+  ]
+}

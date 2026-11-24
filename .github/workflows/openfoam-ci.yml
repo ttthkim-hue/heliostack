@@ -1,0 +1,67 @@
+name: OpenFOAM 14 Smoke CI
+
+on:
+  push:
+    paths:
+      - "openfoam/**"
+      - ".github/workflows/openfoam-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  openfoam14-smoke:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate openfoam/Dockerfile
+        run: |
+          if docker build --help 2>&1 | grep -q -- '--check'; then
+            docker build --check openfoam
+          elif docker buildx build --help 2>&1 | grep -q -- '--check'; then
+            docker buildx build --check openfoam
+          else
+            echo "Buildx --check unavailable; running static Dockerfile lint"
+            grep -q '^FROM ubuntu:24.04' openfoam/Dockerfile
+            grep -q 'signed-by=/usr/share/keyrings/openfoam.gpg' openfoam/Dockerfile
+            ! grep -qi 'apt-key' openfoam/Dockerfile
+          fi
+
+      - name: Install OpenFOAM 14 and NumPy
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ca-certificates curl gnupg python3-numpy
+          curl -fsSL https://dl.openfoam.org/gpg.key -o /tmp/openfoam.key
+          sudo mkdir -p /usr/share/keyrings
+          sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/openfoam.gpg /tmp/openfoam.key
+          rm -f /tmp/openfoam.key
+          echo "deb [signed-by=/usr/share/keyrings/openfoam.gpg] http://dl.openfoam.org/ubuntu noble main" | sudo tee /etc/apt/sources.list.d/openfoam.list >/dev/null
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends openfoam14
+
+      - name: Run OpenFOAM 14 smoke simulation and verify receipt
+        run: |
+          python3 openfoam/run_openfoam_pv_sweep.py --native --smoke --out /tmp/openfoam_smoke_receipt.json
+          python3 - <<'PY'
+          import json
+          import math
+          import pathlib
+
+          receipt = json.loads(pathlib.Path("/tmp/openfoam_smoke_receipt.json").read_text(encoding="utf-8"))
+          assert receipt["mode"] == "smoke"
+          assert receipt["mesh_ok"] is True
+          assert receipt["cells"] == 6044, f"Expected 6044 cells, got {receipt['cells']}"
+          for key in ("q_panel_top_w_m2", "q_panel_bottom_w_m2", "h_conv_total_w_m2k"):
+              val = float(receipt[key])
+              assert math.isfinite(val), f"{key} is not finite: {val}"
+          assert float(receipt["h_conv_total_w_m2k"]) > 0.0
+          print("Verified OpenFOAM 14 smoke receipt:", json.dumps(receipt, indent=2))
+          PY
+          git diff --exit-code fixtures/thermal/openfoam14_pv_thermal_surrogate.json
+
+      - name: Upload smoke receipt artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: openfoam14-smoke-receipt
+          path: /tmp/openfoam_smoke_receipt.json
+          if-no-files-found: error

@@ -1,6 +1,7 @@
 # HelioStack `v0.3.1`
 
 [![CI](https://github.com/ttthkim-hue/heliostack/actions/workflows/ci.yml/badge.svg)](https://github.com/ttthkim-hue/heliostack/actions/workflows/ci.yml)
+[![OpenFOAM 14 Smoke CI](https://github.com/ttthkim-hue/heliostack/actions/workflows/openfoam-ci.yml/badge.svg)](https://github.com/ttthkim-hue/heliostack/actions/workflows/openfoam-ci.yml)
 [![PyPI version](https://img.shields.io/pypi/v/heliostack.svg)](https://pypi.org/project/heliostack/)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-0f766e.svg)](./LICENSE)
 [![Live Browser Demo](https://img.shields.io/badge/Demo-Interactive_Workbench-0f766e)](https://ttthkim-hue.github.io/heliostack/)
