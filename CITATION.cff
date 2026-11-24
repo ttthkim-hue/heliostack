@@ -2,6 +2,7 @@ cff-version: 1.2.0
 message: "If you use HelioStack in research or engineering workflows, please cite it using the metadata below."
 title: "HelioStack: Open-Source Solar PV, 3D Shading, Thermal, and LiFePO4 ESS Optimization Engine"
 version: "0.3.2"
+doi: "10.5281/zenodo.24491741"
 date-released: "2026-11-24"
 license: AGPL-3.0-or-later
 repository-code: "https://github.com/ttthkim-hue/heliostack"
