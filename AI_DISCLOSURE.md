@@ -1,4 +1,4 @@
-# AI Usage & Transparency Disclosure (`HelioStack` v0.3.1)
+# AI Usage & Transparency Disclosure (`HelioStack` v0.3.2)
 
 This disclosure follows the **NLnet Foundation Policy on the use of Generative Artificial Intelligence**.
 
@@ -7,7 +7,7 @@ This disclosure follows the **NLnet Foundation Policy on the use of Generative A
 - Zero generative AI, LLMs, closed neural inference endpoints, or external paid APIs are called during validation, simulation, optimization, or audit generation.
 
 ## 2. Software Engineering Disclosure
-- During scaffolding and verification sprints (v0.1.0 to v0.3.1), AI coding assistance was used under human architecture design, physical model formulation, and code audit. All releases and NLnet-funded milestones remain pure AGPL-3.0-or-later open source.
+- During scaffolding and verification sprints (v0.1.0 to v0.3.2), AI coding assistance was used under human architecture design, physical model formulation, and code audit. All releases and NLnet-funded milestones remain pure AGPL-3.0-or-later open source.
 - Every physical equation, equipment parser guard, LP conservation constraint, OpenFOAM 14 `foamRun` CFD case (`checkMesh` clean, `5,910` cells), `pvlib ModelChain` parity check, US DOE / NREL PVDAQ #2107 check, and European Cyprus PHAETHON testbed check was executed and verified deterministically via `ruff`, `pytest --cov`, and SHA-256 manifests.
 
 ## 3. Open Data Provenance & Attribution

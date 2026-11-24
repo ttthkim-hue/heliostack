@@ -1,6 +1,6 @@
 {
   "title": "HelioStack: Open-Source Solar PV, 3D Shading, OpenFOAM CFD & LiFePO4 ESS Optimization Workbench",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "upload_type": "software",
   "license": "AGPL-3.0-or-later",
   "creators": [

@@ -1,4 +1,4 @@
-# HelioStack `v0.3.1`
+# HelioStack `v0.3.2`
 
 [![CI](https://github.com/ttthkim-hue/heliostack/actions/workflows/ci.yml/badge.svg)](https://github.com/ttthkim-hue/heliostack/actions/workflows/ci.yml)
 [![OpenFOAM 14 Smoke CI](https://github.com/ttthkim-hue/heliostack/actions/workflows/openfoam-ci.yml/badge.svg)](https://github.com/ttthkim-hue/heliostack/actions/workflows/openfoam-ci.yml)
@@ -17,7 +17,7 @@ pip install heliostack
 
 > **Try Live Offline Simulator in Browser:** https://ttthkim-hue.github.io/heliostack/
 
-![HelioStack v0.3.1 Verified Benchmarks — Copernicus Alps, EU Cyprus, US DOE PVDAQ #2107 & OpenFOAM 14](./docs/assets/heliostack_hero_validation.svg)
+![HelioStack v0.3.2 Verified Benchmarks — Copernicus Alps, EU Cyprus, US DOE PVDAQ #2107 & OpenFOAM 14](./docs/assets/heliostack_hero_validation.svg)
 
 > **Key Counter-Intuitive Physics Finding (Verified Open):** Pontoon Floating PV drops daytime cell temperatures by `-3.59 °C` to `-5.77 °C` (`+14–20%` total heat rejection in OpenFOAM 14 `28°` CFD), **yet** dark water albedo (`0.08` vs land `0.20`) reduces rear-side bifacial gain—delivering net annual yield gains in hot climates (**Seville `+0.38%`**) while flipping slightly negative in cooler Northern Europe (**Amsterdam `-0.68%`**).
 
@@ -119,7 +119,7 @@ Today, that capability is gated behind Windows-only proprietary binaries (`PVsys
 ```bash
 # Option A: Install from PyPI (recommended) or directly from GitHub tag
 pip install heliostack
-pip install "git+https://github.com/ttthkim-hue/heliostack.git@v0.3.1"
+pip install "git+https://github.com/ttthkim-hue/heliostack.git@v0.3.2"
 
 # Option B: Editable developer install
 git clone https://github.com/ttthkim-hue/heliostack.git

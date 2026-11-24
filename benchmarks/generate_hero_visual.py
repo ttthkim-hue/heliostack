@@ -88,7 +88,7 @@ def _render_svg(p2: dict[str, Any], p3: dict[str, Any]) -> str:
   <rect width="1280" height="640" rx="18" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2" />
   <rect x="0" y="0" width="1280" height="68" rx="18" fill="#0f172a" />
   <rect x="0" y="50" width="1280" height="18" fill="#0f172a" />
-  <text x="34" y="34" font-size="22" font-weight="800" fill="#ffffff">HelioStack v0.3.1 — Open-Source Solar PV, Terrain, OpenFOAM CFD &amp; ESS Validation</text>
+  <text x="34" y="34" font-size="22" font-weight="800" fill="#ffffff">HelioStack v0.3.2 — Open-Source Solar PV, Terrain, OpenFOAM CFD &amp; ESS Validation</text>
   <text x="34" y="56" font-size="12.5" fill="#94a3b8">AGPL-3.0 License · pip install heliostack · 0% Runtime Generative AI · Verified Across Alps, EU Cyprus &amp; US DOE Utility Telemetry</text>
 
   <!-- 4 Cards -->
