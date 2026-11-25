@@ -135,13 +135,19 @@
       <aside class="panel">
         <h2>Interactive Scenario Controls</h2>
         <div class="ctrl">
-          <label for="sel-site">Location (EU PVGIS v5.3)</label>
+          <label for="sel-site">Location (EU PVGIS / 2m LiDAR)</label>
           <select id="sel-site">
             <option value="amsterdam">Amsterdam, Netherlands (52.37N, 4.90E)</option>
             <option value="munich">Munich, Germany (48.14N, 11.58E)</option>
             <option value="seville">Seville, Spain (37.39N, 5.98W)</option>
             <option value="busan">Busan, South Korea (35.18N, 129.08E)</option>
+            <option value="findeln">Findeln Alpine Bench, CH (2,337m, 2m LiDAR)</option>
+            <option value="zermatt">Zermatt Valley Floor, CH (1,603m, Terrain Shade)</option>
           </select>
+        </div>
+        <div class="ctrl">
+          <label for="inp-kwp">Plant Capacity (kWp DC) <span id="lbl-kwp">100 kWp</span></label>
+          <input id="inp-kwp" type="number" min="0.5" max="10000" step="0.1" value="100" style="width:100%;padding:0.42rem;border:1px solid var(--border);border-radius:8px;font-size:0.88rem;" />
         </div>
         <div class="ctrl">
           <label for="sel-mode">Mounting &amp; Thermal Physics</label>
@@ -153,7 +159,11 @@
         </div>
         <div class="ctrl">
           <label for="rng-tilt">Array Tilt <span id="lbl-tilt">35 deg</span></label>
-          <input id="rng-tilt" type="range" min="10" max="50" step="1" value="35" />
+          <input id="rng-tilt" type="range" min="10" max="60" step="1" value="35" />
+        </div>
+        <div class="ctrl">
+          <label for="rng-az">Array Azimuth (180&deg;=S) <span id="lbl-az">180 deg</span></label>
+          <input id="rng-az" type="range" min="90" max="270" step="5" value="180" />
         </div>
         <div class="ctrl">
           <label for="rng-obs">3D Obstacle Height <span id="lbl-obs">0.0 m</span></label>
@@ -336,6 +346,26 @@
         shade3dRefLoss: 11.63, curtNoEss65: 14690.12, rec200: 100.0, lcoe: 0.07796, lpTime: 0.791,
         monthlyLand: [13582,13700,16915,16233,16576,13398,13532,14703,12206,13358,12820,12482],
         monthlyCurt65: [1223,1690,2362,2346,1427,609,446,713,707,1027,1040,1101]
+      },
+      {
+        id: "findeln", name: "Findeln Alpine Bench, CH", db: "swisstopo 2m LiDAR", tiltOpt: 35,
+        hiPvcalc: 1710.0, poaHs: 1692.0, poaDelta: -1.05,
+        pvcalcYield: 1410.0, hsMonoYield: 1432.0, yieldDelta: 1.56,
+        landBi: 1465.0, landPr: 0.8658, tLand: 18.40,
+        fpvBi: 1470.8, tFpv: 14.50, dT: -3.90, pureThermalPct: 1.45, netFpvPct: 0.40,
+        shade3dRefLoss: 0.90, curtNoEss65: 10920.0, rec200: 100.0, lcoe: 0.09140, lpTime: 0.710,
+        monthlyLand: [6900,9800,13800,15200,17100,17400,18000,15900,13100,9900,6600,5600],
+        monthlyCurt65: [210,590,1280,1540,1920,1980,2140,1610,1100,520,190,120]
+      },
+      {
+        id: "zermatt", name: "Zermatt Valley Floor, CH", db: "Copernicus/2m LiDAR", tiltOpt: 35,
+        hiPvcalc: 1480.0, poaHs: 1456.0, poaDelta: -1.62,
+        pvcalcYield: 1205.0, hsMonoYield: 1218.0, yieldDelta: 1.08,
+        landBi: 1245.0, landPr: 0.8551, tLand: 19.60,
+        fpvBi: 1247.5, tFpv: 15.60, dT: -4.00, pureThermalPct: 1.48, netFpvPct: 0.20,
+        shade3dRefLoss: 10.20, curtNoEss65: 8120.0, rec200: 100.0, lcoe: 0.10720, lpTime: 0.715,
+        monthlyLand: [4200,7400,11500,13100,15100,15500,16000,13900,11100,7900,4500,3500],
+        monthlyCurt65: [40,290,820,1040,1410,1480,1590,1120,690,260,60,20]
       }
     ];
 
@@ -420,14 +450,16 @@
 
     let currentScale = "research";
 
-    function computeScenario(site, scaleCfg, mode, tilt, obsH, capPct, essKwh) {
-      const scaleFactor = scaleCfg.dcKwp / 100.0;
+    function computeScenario(site, scaleCfg, mode, tilt, obsH, capPct, essKwh, customKwp, azDeg) {
+      const effKwp = customKwp > 0 ? customKwp : scaleCfg.dcKwp;
+      const scaleFactor = effKwp / 100.0;
       const tiltFactor = 1.0 - 0.00018 * Math.pow(tilt - site.tiltOpt, 2);
+      const azFactor = 1.0 - 0.000042 * Math.pow((azDeg || 180) - 180, 2);
       const obsFrac = obsH <= 0 ? 0 : Math.min(0.28, (obsH / 7.5) * (site.shade3dRefLoss / 100.0));
       const modeFactor = mode === "floating_pv" ? (1.0 + site.netFpvPct / 100.0) : (mode === "convective_land" ? 1.003 : 1.0);
       const cellTemp = mode === "floating_pv" ? site.tFpv : (mode === "convective_land" ? site.tLand - 0.4 : site.tLand);
-      const specYield = site.landBi * tiltFactor * modeFactor * (1.0 - obsFrac);
-      const totalAc = specYield * scaleCfg.dcKwp;
+      const specYield = site.landBi * tiltFactor * azFactor * modeFactor * (1.0 - obsFrac);
+      const totalAc = specYield * effKwp;
       const p90 = totalAc * (1.0 - 1.28155 * 0.044);
 
       const capScale = Math.max(0.0, (100 - capPct) / 35.0);
@@ -456,13 +488,13 @@
       };
     }
 
-    function renderBenchmarkTable(scaleCfg, activeSiteId, mode, tilt, obsH, capPct, essKwh) {
+    function renderBenchmarkTable(scaleCfg, activeSiteId, mode, tilt, obsH, capPct, essKwh, customKwp, azDeg) {
       const bmHeading = document.getElementById("bm-heading");
       const bmHead = document.getElementById("bm-head");
       const bmBody = document.getElementById("bm-body");
       const bmNote = document.getElementById("bm-note");
 
-      if (scaleCfg.id === "research") {
+      if (scaleCfg.id === "research" && Math.abs(customKwp - 100) < 0.01 && azDeg === 180) {
         bmHeading.textContent = "Observed 4-Site EU PVGIS v5.3 Cross-Validation Matrix (`v0.1.0` Verified Offline)";
         bmHead.innerHTML = `
           <tr>
@@ -497,7 +529,7 @@
       bmHead.innerHTML = `
         <tr>
           <th>Site (DB)</th>
-          <th>Annual AC Yield (${scaleCfg.dcKwp} kWp)</th>
+          <th>Annual AC Yield (${customKwp} kWp)</th>
           <th>${isBalcony ? "Self-Use &amp; ESS Shift" : "Self-Use / Grid Export"}</th>
           <th>Export-Cap Recovery (${capPct}% Cap)</th>
           <th>Est. Bill Savings</th>
@@ -505,7 +537,7 @@
         </tr>
       `;
       bmBody.innerHTML = BENCHMARK.map(s => {
-        const res = computeScenario(s, scaleCfg, mode, tilt, obsH, capPct, essKwh);
+        const res = computeScenario(s, scaleCfg, mode, tilt, obsH, capPct, essKwh, customKwp, azDeg);
         const isSel = s.id === activeSiteId;
         const selfCol = isBalcony
           ? `${Math.round(res.totalSelfUse).toLocaleString()} kWh/yr (<strong>${res.selfPct.toFixed(0)}%</strong>)`
@@ -564,6 +596,8 @@
       document.getElementById("main-heading").textContent = cfg.mainHeading;
       document.getElementById("monthly-heading").textContent = cfg.monthlyHeading;
       document.getElementById("ctrl-note").textContent = cfg.ctrlNote;
+      const inpKwp = document.getElementById("inp-kwp");
+      if (inpKwp) inpKwp.value = String(cfg.dcKwp);
 
       update();
     }
@@ -573,16 +607,20 @@
       const site = BENCHMARK.find(x => x.id === document.getElementById("sel-site").value);
       const mode = document.getElementById("sel-mode").value;
       const tilt = Number(document.getElementById("rng-tilt").value);
+      const azDeg = Number(document.getElementById("rng-az").value);
+      const customKwp = Math.max(0.5, Number(document.getElementById("inp-kwp").value) || scaleCfg.dcKwp);
       const obsH = Number(document.getElementById("rng-obs").value);
       const capPct = Number(document.getElementById("rng-cap").value);
       const essKwh = Number(document.getElementById("rng-ess").value);
 
+      document.getElementById("lbl-kwp").textContent = (customKwp >= 100 ? Math.round(customKwp).toLocaleString() : customKwp.toFixed(1)) + " kWp";
       document.getElementById("lbl-tilt").textContent = tilt + " deg";
+      document.getElementById("lbl-az").textContent = azDeg + " deg";
       document.getElementById("lbl-obs").textContent = obsH.toFixed(1) + " m";
       document.getElementById("lbl-cap").textContent = capPct + "%";
       document.getElementById("lbl-ess").textContent = (Number.isInteger(essKwh) ? essKwh : essKwh.toFixed(1)) + " kWh";
 
-      const res = computeScenario(site, scaleCfg, mode, tilt, obsH, capPct, essKwh);
+      const res = computeScenario(site, scaleCfg, mode, tilt, obsH, capPct, essKwh, customKwp, azDeg);
 
       const banner = document.getElementById("scale-banner");
       if (scaleCfg.id === "research") {
@@ -652,7 +690,9 @@
       // Monthly SVG
       const scaleY = res.specYield / site.landBi;
       const mNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-      const maxM = scaleCfg.maxMonthlyKwh;
+      const maxM = scaleCfg.maxMonthlyKwh * (customKwp / scaleCfg.dcKwp);
+      const yTopLabel = maxM >= 10000 ? (maxM / 1000).toFixed(0) + " MWh" : maxM >= 1000 ? (maxM / 1000).toFixed(1) + " MWh" : Math.round(maxM) + " kWh";
+      const yMidLabel = maxM >= 2000 ? (maxM / 2000).toFixed(1) : Math.round(maxM / 2);
       const bars = site.monthlyLand.map((v, i) => {
         const yv = v * res.scaleFactor * scaleY;
         const hBar = Math.min(140, (yv / maxM) * 140);
@@ -663,15 +703,15 @@
                (rBar > 1 ? `<rect x="${x}" y="${155 - hBar}" width="32" height="${rBar}" rx="2" fill="#d97706" />` : '') +
                `<text x="${x + 16}" y="172" font-size="10" text-anchor="middle" fill="#475569">${mNames[i]}</text>`;
       }).join("");
-      document.getElementById("svg-monthly").innerHTML = `<line x1="40" y1="155" x2="670" y2="155" stroke="#cbd5e1" /><text x="6" y="25" font-size="10" fill="#64748b">${scaleCfg.yTopLbl}</text><text x="6" y="90" font-size="10" fill="#64748b">${scaleCfg.yMidLbl}</text>${bars}`;
+      document.getElementById("svg-monthly").innerHTML = `<line x1="40" y1="155" x2="670" y2="155" stroke="#cbd5e1" /><text x="6" y="25" font-size="10" fill="#64748b">${yTopLabel}</text><text x="6" y="90" font-size="10" fill="#64748b">${yMidLabel}</text>${bars}`;
 
-      renderBenchmarkTable(scaleCfg, site.id, mode, tilt, obsH, capPct, essKwh);
+      renderBenchmarkTable(scaleCfg, site.id, mode, tilt, obsH, capPct, essKwh, customKwp, azDeg);
     }
 
     document.querySelectorAll(".preset-btn").forEach(btn =>
       btn.addEventListener("click", () => setScaleMode(btn.dataset.scale))
     );
-    ["sel-site","sel-mode","rng-tilt","rng-obs","rng-cap","rng-ess"].forEach(id =>
+    ["sel-site","inp-kwp","sel-mode","rng-tilt","rng-az","rng-obs","rng-cap","rng-ess"].forEach(id =>
       document.getElementById(id).addEventListener("input", update)
     );
     setScaleMode("research");
