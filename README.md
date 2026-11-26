@@ -29,7 +29,7 @@ pip install heliostack
   4. **European Union 1-Year Outdoor Testbed** (**University of Cyprus PHAETHON CoE**, `8,784` full hours, `CC-BY-4.0`): `Tmod RMSE 2.18 °C` (`open_rack R² 0.9705`) / `4.19 °C` (`OpenFOAM 14 R² 0.8906`), full-year DC `R² 0.9887`
   5. **Real 892.8 kWp US Utility Telemetry** (**US DOE / NREL PVDAQ #2107**, 2024 `3,255` daylight operating hours, `R² = 0.9101`, `MBE = +3.81%`, `nRMSE = 6.79%`)
   6. **Canonical `pvlib ModelChain` parity** (`-0.67%` Amsterdam, `+0.31%` Seville) + 12-step PVsyst-style loss tree
-- **AI Transparency:** [`AI_DISCLOSURE.md`](./AI_DISCLOSURE.md) | **NLnet `2027-01-03` Roadmap:** [`docs/ROADMAP_TO_NLNET_20270103.md`](./docs/ROADMAP_TO_NLNET_20270103.md)
+- **AI Transparency:** [`AI_DISCLOSURE.md`](./AI_DISCLOSURE.md) | **v1.0 Engineering Roadmap:** [`docs/ROADMAP.md`](./docs/ROADMAP.md)
 
 ---
 

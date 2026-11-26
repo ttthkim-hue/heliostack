@@ -45,28 +45,28 @@ def main() -> None:
             f"AC MBE={ac['mbe_pct']:+.2f}%"
         )
 
-    grant_boundary: dict[str, Any] = {
-        "pre_grant_prototype_v03": [
+    engineering_roadmap: dict[str, Any] = {
+        "verified_baseline_v03": [
             "Clean-room .PAN/.OND validator and 12-step PVsyst loss waterfall",
             "3D ray-box obstacles + 36-azimuth Copernicus DEM horizon & diffuse SVF",
             "2D canonical OpenFOAM 14 steady RANS thermal surrogate (land & Floating PV)",
             "Offline/cached US PVDAQ #2107 & EU Cyprus 1-year validation harnesses",
             "8,760-hr HiGHS LiFePO4 curtailment-recovery dispatch LP & RO-Crate 1.1 audit",
         ],
-        "nlnet_restack_v10_funded_milestones_eur_42000": [
-            "M1 (EUR 10k, 143h): Full 3D string-level electrical mismatch, bypass diode I-V shading, single/dual-axis trackers",
-            "M2 (EUR 16k, 228h): Flagship 3D multi-row turbulent CHT OpenFOAM atlas covering BIPV ventilated facades, agrivoltaics & wave-tilted FPV + academic benchmark paper pack",
-            "M3 (EUR 10k, 143h): 25-year probabilistic Monte-Carlo P50/P90/P99 bankability, SEI battery degradation & EU ENTSO-E negative-price MILP",
-            "M4 (EUR 6k, 86h): Local browser WebAssembly/WebGL CAD scene editor, open crowd-verified equipment DB, Debian/Nix/PyPI packaging & WCAG audit",
+        "planned_v10_milestones": [
+            "M1: Full 3D string-level electrical mismatch, bypass diode I-V shading, single/dual-axis trackers",
+            "M2: Flagship 3D multi-row turbulent CHT OpenFOAM atlas covering BIPV ventilated facades, agrivoltaics & wave-tilted FPV + academic benchmark paper pack",
+            "M3: 25-year probabilistic Monte-Carlo P50/P90/P99 bankability, SEI battery degradation & EU ENTSO-E negative-price MILP",
+            "M4: Local browser WebAssembly/WebGL CAD scene editor, open crowd-verified equipment DB, Debian/Nix/PyPI packaging & WCAG audit",
         ],
     }
 
     payload = {
-        "engine_version": "0.3.1",
+        "engine_version": "0.3.2",
         "elapsed_s": round(time.perf_counter() - t0, 2),
         "openfoam14_thermal_surrogate": cfd_surrogate,
         "eu_cyprus_field_validation": val_cy,
-        "grant_scope_boundary": grant_boundary,
+        "engineering_roadmap": engineering_roadmap,
     }
     RESULTS_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     print(f"Saved Phase 3 validation to {RESULTS_PATH} in {payload['elapsed_s']}s")
